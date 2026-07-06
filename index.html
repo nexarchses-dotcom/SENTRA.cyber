@@ -295,6 +295,8 @@ tbody tr:hover{background:rgba(56,201,220,.035)}
       </button>
       <div class="tenant-menu" id="tenantMenu"></div>
     </div>
+    <button class="btn" onclick="openPalette()" title="Global search (Ctrl+K)" style="padding:7px 11px">⌕ <span class="mono" style="font-size:10px;color:var(--faint)">Ctrl K</span></button>
+    <button class="btn" onclick="execBriefing()" title="Generate executive briefing (print/PDF)" style="padding:7px 11px">▤ Briefing</button>
     <button class="btn" id="connBtn" onclick="openConnect()" title="Backend connection" style="padding:7px 11px"><span id="connDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--faint);margin-right:6px"></span>Connect</button>
     <button class="cyra-trigger" onclick="openCyra()"><span class="pulse"></span> Ask Cyra</button>
   </div>
@@ -306,6 +308,8 @@ tbody tr:hover{background:rgba(56,201,220,.035)}
   <main class="main" id="main">
     <section class="view active" data-view="dashboard" id="v-dashboard"></section>
     <section class="view" data-view="assets" id="v-assets"></section>
+    <section class="view" data-view="network" id="v-network"></section>
+    <section class="view" data-view="rogue" id="v-rogue"></section>
     <section class="view" data-view="risk" id="v-risk"></section>
     <section class="view" data-view="compliance" id="v-compliance"></section>
     <section class="view" data-view="incidents" id="v-incidents"></section>
@@ -316,8 +320,14 @@ tbody tr:hover{background:rgba(56,201,220,.035)}
     <section class="view" data-view="playbooks" id="v-playbooks"></section>
     <section class="view" data-view="automation" id="v-automation"></section>
     <section class="view" data-view="evidence" id="v-evidence"></section>
+    <section class="view" data-view="attack" id="v-attack"></section>
+    <section class="view" data-view="attackpath" id="v-attackpath"></section>
+    <section class="view" data-view="trends" id="v-trends"></section>
+    <section class="view" data-view="social" id="v-social"></section>
+    <section class="view" data-view="geo" id="v-geo"></section>
     <section class="view" data-view="governance" id="v-governance"></section>
     <section class="view" data-view="roadmap" id="v-roadmap"></section>
+    <section class="view" data-view="api" id="v-api"></section>
   </main>
 </div>
 
@@ -665,6 +675,8 @@ const NAVDEF=[
   {grp:'Operate'},
   {id:'dashboard',label:'Executive Cockpit',icon:'M3 12h4l2 6 4-14 2 8h6'},
   {id:'assets',label:'Asset Inventory',icon:'M4 7h16M4 12h16M4 17h16'},
+  {id:'network',label:'Network Coverage',icon:'M5 5h4v4H5z M15 5h4v4h-4z M10 15h4v4h-4z M7 9v3h10V9 M12 12v3'},
+  {id:'rogue',label:'Rogue Device Watch',icon:'M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z M9.5 12l1.8 1.8 3.2-3.6 M18 6l-12 12'},
   {id:'risk',label:'Risk Register',icon:'M12 3l9 16H3z M12 9v5 M12 17h.01'},
   {id:'incidents',label:'Incidents & Response',icon:'M12 2v6 M12 16v6 M5 12H2 M22 12h-3 M12 9a3 3 0 100 6 3 3 0 000-6z'},
   {id:'vulns',label:'Vulnerabilities',icon:'M9 2l6 0 0 6 4 4-4 4 0 6-6 0 0-6-4-4 4-4z'},
@@ -672,6 +684,12 @@ const NAVDEF=[
   {id:'detection',label:'Threat Detection',icon:'M12 2v3 M12 19v3 M2 12h3 M19 12h3 M12 7a5 5 0 100 10 5 5 0 000-10z M12 11a1 1 0 100 2 1 1 0 000-2z'},
   {id:'mlrisk',label:'ML Risk Engine',icon:'M4 18V9 M9 18V5 M14 18v-6 M19 18v-9 M3 21h18'},
   {id:'remediation',label:'Remediation Planner',icon:'M9 11l3 3 8-8 M3 12l3 3 M3 18l3 3 6-6'},
+  {id:'attack',label:'ATT\u0026CK for ICS',icon:'M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z'},
+  {id:'attackpath',label:'Attack Path Analysis',icon:'M5 12h14 M12 5l7 7-7 7 M5 5l7 7-7 7'},
+  {id:'trends',label:'Posture Trends',icon:'M3 17l4-8 4 5 3-4 5 7 M3 20h18'},
+  {grp:'External Surface'},
+  {id:'social',label:'Digital Footprint',icon:'M18 8a3 3 0 10-2.8-4 M6 12a3 3 0 100-6 3 3 0 000 6z M18 19a3 3 0 100-6 3 3 0 000 6z M8.6 10.6l6.8-4 M8.6 13.4l6.8 4'},
+  {id:'geo',label:'Threat Geography',icon:'M12 2a10 10 0 100 20 10 10 0 000-20z M2 12h20 M12 2a15 15 0 010 20 M12 2a15 15 0 000 20'},
   {grp:'Automation'},
   {id:'playbooks',label:'IR Playbooks',icon:'M4 4h11l5 5v11a0 0 0 010 0H4z M14 4v5h5 M8 13h7 M8 17h7'},
   {id:'automation',label:'Triage & Alerts',icon:'M12 2a6 6 0 016 6c0 5 3 6 3 6H3s3-1 3-6a6 6 0 016-6z M10 20a2 2 0 004 0'},
@@ -681,8 +699,9 @@ const NAVDEF=[
   {id:'governance',label:'Governance & SoA',icon:'M3 21h18 M5 21V8l7-5 7 5v13 M9 21v-6h6v6'},
   {grp:'Program'},
   {id:'roadmap',label:'Build Roadmap',icon:'M4 19V5 M4 7h10l-2-2 2-2M4 13h13l-2-2 2-2'},
+  {id:'api',label:'API Specification',icon:'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z M14 2v6h6 M8 13h8 M8 17h5'},
 ];
-const CRUMBS={dashboard:['Executive Cockpit','Converged IT/OT security posture'],assets:['Asset Inventory','IT & OT assets across the Purdue model'],risk:['Risk Register','ISO 27005 + IEC 62443-3-2 risk assessment'],incidents:['Incidents & Response','Detection, triage and IR playbooks'],vulns:['Vulnerabilities','CVE exposure mapped to assets'],detection:['Threat Detection','Passive OT anomaly baselining · EWMA + z-score'],mlrisk:['ML Risk Engine','In-browser logistic model · explainable scoring'],remediation:['Remediation Planner','Data-driven control-gap prioritization'],playbooks:['IR Playbook Engine','Executable response runbooks · NIST RS/RC · ISO 27035'],automation:['Triage & Alerts','Automated triage rules and notification fabric'],evidence:['Evidence Ledger','Continuous compliance evidence for certification'],compliance:['Compliance Register','One control library · three frameworks'],governance:['Governance & Statement of Applicability','ISMS scope, policy and accountability'],roadmap:['Build Roadmap','Phased delivery plan for this platform']};
+const CRUMBS={dashboard:['Executive Cockpit','Converged IT/OT security posture'],assets:['Asset Inventory','IT & OT assets across the Purdue model'],network:['Network Coverage','LAN segments, subnets and security-monitoring coverage · blind-spot analysis'],rogue:['Rogue Device Watch','NAC-style discovery of unmanaged and unauthorized devices'],risk:['Risk Register','ISO 27005 + IEC 62443-3-2 risk assessment'],incidents:['Incidents & Response','Detection, triage and IR playbooks'],vulns:['Vulnerabilities','CVE exposure mapped to assets'],detection:['Threat Detection','Passive OT anomaly baselining · EWMA + z-score'],mlrisk:['ML Risk Engine','In-browser logistic model · explainable scoring'],remediation:['Remediation Planner','Data-driven control-gap prioritization'],attack:['MITRE ATT&CK for ICS','Adversary technique coverage across the kill chain'],attackpath:['Attack Path Analysis','Shortest adversary path through your actual control gaps · Purdue graph'],trends:['Posture Trends','Historical posture and CSF function scores over time'],social:['Social Media & Brand Security','Defensive posture for the organization\u2019s own accounts and brand'],geo:['Threat Geography','Inbound internet traffic and attack sources by region · defensive geo-IP'],playbooks:['IR Playbook Engine','Executable response runbooks · NIST RS/RC · ISO 27035'],automation:['Triage & Alerts','Automated triage rules and notification fabric'],evidence:['Evidence Ledger','Continuous compliance evidence for certification'],compliance:['Compliance Register','One control library · three frameworks'],governance:['Governance & Statement of Applicability','ISMS scope, policy and accountability'],roadmap:['Build Roadmap','Phased delivery plan for this platform'],api:['API Specification','OpenAPI 3.0 — enterprise REST backend contract']};
 
 function renderNav(){
   const m=metrics();
@@ -712,8 +731,37 @@ function go(v){ S.view=v; renderNav();
    ============================================================================ */
 const RENDER={};
 
+/* ---- Posture trend history (per tenant, persisted; synthesised backfill) ---- */
+function trendKey(){ return 'sentra_trend_'+S.tenant; }
+function loadTrend(){ try{ return JSON.parse(localStorage.getItem(trendKey())||'null'); }catch(e){ return null; } }
+function saveTrend(a){ try{ localStorage.setItem(trendKey(), JSON.stringify(a)); }catch(e){} }
+function recordPosture(v){
+  let h=loadTrend();
+  const today=new Date().toISOString().slice(0,10);
+  if(!h){
+    // seed a plausible 30-day backfill trending up to current value
+    h=[]; for(let i=29;i>=1;i--){ const dd=new Date(Date.now()-i*864e5).toISOString().slice(0,10);
+      const drift=Math.round(v - i*0.5 + (Math.random()*4-2)); h.push({d:dd, v:Math.max(20,Math.min(100,drift))}); }
+  }
+  if(h.length && h[h.length-1].d===today) h[h.length-1].v=v; else h.push({d:today, v});
+  if(h.length>60) h=h.slice(-60);
+  saveTrend(h); return h;
+}
+function trendDelta(){ const h=loadTrend(); if(!h||h.length<2) return 0; return h[h.length-1].v - h[0].v; }
+function trendSpark(){
+  const h=loadTrend(); if(!h||h.length<2) return '<div class="muted" style="font-size:11px">Recording…</div>';
+  const w=260,ht=42, vs=h.map(p=>p.v), mn=Math.min(...vs)-3, mx=Math.max(...vs)+3;
+  const pts=h.map((p,i)=>`${(i/(h.length-1))*w},${ht-((p.v-mn)/(mx-mn))*ht}`).join(' ');
+  const last=h[h.length-1];
+  return `<svg viewBox="0 0 ${w} ${ht}" width="100%" height="${ht}" preserveAspectRatio="none" style="margin-top:4px">
+    <polyline points="${pts}" fill="none" stroke="var(--brand)" stroke-width="1.7"/>
+    <circle cx="${w}" cy="${ht-((last.v-mn)/(mx-mn))*ht}" r="2.6" fill="var(--brand)"/></svg>
+    <div style="display:flex;justify-content:space-between"><span class="muted" style="font-size:9.5px;font-family:var(--mono)">${h[0].d}</span><span class="muted" style="font-size:9.5px;font-family:var(--mono)">today</span></div>`;
+}
+
 RENDER.dashboard=function(){
   const m=metrics(), d=S.data;
+  recordPosture(m.posture);
   const csfColor={Govern:'#6E8DF7',Identify:'#38C9DC',Protect:'#41C08A',Detect:'#E7C24B',Respond:'#F2933C',Recover:'#9d7bf0'};
   const fnScore=p=>p>=75?'var(--ok)':p>=50?'var(--med)':'var(--crit)';
 
@@ -779,6 +827,10 @@ RENDER.dashboard=function(){
           ${gauge(m.isoCov,'ISO 27001','Annex A · 93 ctrl','var(--brand)')}
           ${gauge(m.iecCov,'IEC 62443','SL maturity','var(--ok)')}
           ${gauge(m.posture,'NIST CSF','6 functions','#6E8DF7')}
+        </div>
+        <div style="margin-top:12px;border-top:1px solid var(--line-soft);padding-top:10px">
+          <div style="display:flex;align-items:baseline;gap:8px"><span class="eyebrow" style="font-size:9px">Posture trend</span><span class="mono" style="font-size:10px;color:${trendDelta()>=0?'var(--ok)':'var(--crit)'}">${trendDelta()>=0?'▲ +':'▼ '}${trendDelta()} (30d)</span></div>
+          ${trendSpark()}
         </div></div></div>
 
       <div class="card"><div class="card-h"><span class="eyebrow">ISO 27005 · 62443-3-2</span><h3>Risk heatmap</h3><span class="right">${m.totalRisk} risks</span></div>
@@ -837,6 +889,267 @@ RENDER.assets=function(filter){
 };
 function matchAsset(a){const q=(S._aq||'').toLowerCase();if(!q)return true;return [a.id,a.name,a.vendor,a.ip,a.type,a.zone].join(' ').toLowerCase().includes(q);}
 function filterAssets(f){S._assetFilter=f;if(S.view!=='assets')go('assets');RENDER.assets();}
+
+/* ---- NETWORK COVERAGE : derive LAN segments from asset IPs, score monitoring/segmentation coverage ---- */
+function lanSegments(){
+  const d=S.data;
+  const st={implemented:1,partial:0.5,gap:0};
+  const stOf=id=>{const c=d.controls.find(x=>x.id===id);return c?c.status:'gap';};
+  const mon=st[stOf('C-13')], log=st[stOf('C-21')], seg=stOf('C-05'), auth=stOf('C-06');
+  const segs={};
+  d.assets.forEach(a=>{
+    let subnet;
+    if(!a.ip||a.ip==='—') subnet='(no IP · cloud/SaaS)';
+    else if(a.ip.includes('/')) subnet=a.ip;
+    else { const p=a.ip.split('.'); subnet=`${p[0]}.${p[1]}.${p[2]}.0/24`; }
+    (segs[subnet]=segs[subnet]||{subnet,assets:[],levels:new Set(),zones:new Set()});
+    segs[subnet].assets.push(a); segs[subnet].levels.add(a.level); segs[subnet].zones.add(a.zone);
+  });
+  return Object.values(segs).map(s=>{
+    const levels=[...s.levels], zones=[...s.zones];
+    const isOT=levels.some(l=>['L0','L1','L2','L3'].includes(l));
+    const isDMZ=levels.includes('L3.5');
+    const hasSensor=s.assets.some(a=>['Historian','SCADA','Firewall','Switch','Server'].includes(a.type));
+    // monitoring coverage 0-100: logging + IDS controls, boosted by a monitor-capable device, penalised for un-instrumented OT
+    let cov=Math.round((log*0.5+mon*0.5)*100);
+    if(hasSensor) cov=Math.min(100,cov+15);
+    if(isOT && mon===0) cov=Math.max(0,cov-25);
+    if(subnet_isCloud(s.subnet)) cov=Math.min(100,cov+10);
+    const crit=s.assets.filter(a=>a.crit==='crit').length;
+    const segmentation=isDMZ?'boundary':(seg==='gap'?'flat':seg==='partial'?'partial':'segmented');
+    const accessCtl=auth==='gap'?'weak':auth==='partial'?'partial':'enforced';
+    return {subnet:s.subnet,assets:s.assets,levels,zones,isOT,isDMZ,cov,crit,segmentation,accessCtl,
+      count:s.assets.length,monitored:cov>=50,blind:cov<50};
+  }).sort((a,b)=>a.cov-b.cov);
+}
+function subnet_isCloud(s){return s.includes('cloud');}
+/* ---- ROGUE / UNAUTHORIZED DEVICE DETECTION : discovered devices absent from the authorized inventory ---- */
+function rogueDevices(){
+  // representative NAC / passive-discovery telemetry, seeded per tenant.
+  // In production this is the diff between discovered hosts and the asset register.
+  const catalog={
+    holcim:[
+      ['10.21.1.87','Unknown host (OT control VLAN)','crit','Unrecognized device answering on the kiln-control segment outside a change window.','Quarantine the switch port and verify with operations before any further action.'],
+      ['10.21.2.140','Rogue wireless access point','high','Unmanaged AP broadcasting near the control room \u2014 potential bridge into L2.','Physically locate and remove; sweep for open SSIDs.'],
+      ['10.21.4.66','Personal laptop (non-domain)','med','Unenrolled endpoint on the site IT VLAN.','Apply NAC policy; move to guest VLAN and require enrollment.'],
+    ],
+    nexarch:[
+      ['10.0.9.45','Unknown device on OT lab VLAN','high','Host not in inventory on the demo-lab segment.','Confirm ownership; isolate if unattributed.'],
+      ['10.0.4.190','Personal mobile device','med','BYOD device on the corporate VLAN.','Enforce MDM / guest network policy.'],
+    ],
+  };
+  const rows=catalog[S.tenant]||[
+    ['10.0.0.201','Unknown host','med','Device not present in the authorized asset inventory.','Investigate and enroll or remove.'],
+  ];
+  const macHex=ip=>{let s=[...ip].reduce((a,c)=>a+c.charCodeAt(0),0);const h=()=>{s=(s*131+7)%256;return s.toString(16).padStart(2,'0').toUpperCase();};return `${h()}:${h()}:${h()}:${h()}:${h()}:${h()}`;};
+  const firsts=['18m ago','2h ago','5h ago','1d ago'];
+  return rows.map((r,i)=>{
+    const ip=r[0], p=ip.split('.'), subnet=`${p[0]}.${p[1]}.${p[2]}.0/24`;
+    const otPrefixes=['10.21.1','10.21.2','10.21.3','10.0.9'];
+    const isOT=otPrefixes.some(x=>ip.startsWith(x));
+    return {ip,subnet,mac:macHex(ip),identity:r[1],risk:r[2],note:r[3],action:r[4],isOT,firstSeen:firsts[i%firsts.length]};
+  }).sort((a,b)=>({crit:0,high:1,med:2,low:3}[a.risk]-{crit:0,high:1,med:2,low:3}[b.risk]));
+}
+RENDER.network=function(){
+  const segs=lanSegments(), d=S.data;
+  const monPct=Math.round(segs.filter(s=>s.monitored).length/segs.length*100);
+  const avgCov=Math.round(segs.reduce((a,s)=>a+s.cov,0)/segs.length);
+  const flat=segs.filter(s=>s.segmentation==='flat').length;
+  const blindCrit=segs.filter(s=>s.blind&&(s.isOT||s.crit)).length;
+  const covColor=c=>c>=70?'var(--ok)':c>=40?'var(--med)':'var(--crit)';
+  const lvlColor=l=>['L0','L1'].includes(l)?'#F2933C':['L2','L3'].includes(l)?'#41C08A':l==='L3.5'?'#E7C24B':'#6E8DF7';
+  $('#v-network').innerHTML=`
+    <div class="callout"><b>LAN coverage &amp; visibility.</b> Segments are derived from asset addressing and scored for <b>security-monitoring coverage</b> (logging + IDS), <b>segmentation</b> (IEC 62443 zones/conduits) and <b>access control</b>. Blind spots \u2014 segments carrying critical/OT assets without monitoring \u2014 are surfaced first. Maps to <b>NIST ID.AM / PR.IR / DE.CM</b> and <b>IEC 62443 SR 5.1 / SR 6.2</b>.</div>
+    <div class="three" style="margin-bottom:16px">
+      <div class="card"><div class="card-b" style="display:flex;align-items:center;gap:14px">
+        <div style="font-family:var(--mono);font-size:30px;font-weight:700;color:${covColor(monPct)}">${monPct}%</div>
+        <div style="flex:1"><div style="font-weight:600;font-size:13px">Segments monitored</div><div class="muted" style="font-size:11px;margin-top:2px">${segs.filter(s=>s.monitored).length} of ${segs.length} segments</div></div></div></div>
+      <div class="card"><div class="card-b" style="display:flex;align-items:center;gap:14px">
+        <div style="font-family:var(--mono);font-size:30px;font-weight:700;color:${covColor(avgCov)}">${avgCov}</div>
+        <div style="flex:1"><div style="font-weight:600;font-size:13px">Avg coverage score</div><div class="muted" style="font-size:11px;margin-top:2px">${d.assets.length} devices · ${segs.length} segments</div></div></div></div>
+      ${statCard('Critical blind spots',blindCrit,'var(--crit)',segs.length)}
+    </div>
+    ${blindCrit?`<div class="banner" style="border-color:rgba(240,91,87,.3);background:linear-gradient(90deg,var(--crit-bg),transparent)"><b>\u26a0 ${blindCrit} critical/OT segment(s) unmonitored</b> \u2014 these carry critical assets with no effective detection coverage. Prioritise passive OT monitoring here.<span class="std-badge" style="margin-left:auto">DE.CM-01</span></div>`:''}
+
+    <div class="eyebrow" style="margin-bottom:8px">Segment map</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-bottom:18px">
+      ${segs.map(s=>`<div class="card" style="border-top:3px solid ${covColor(s.cov)};cursor:pointer" onclick='askCyraAbout("Network segment ${s.subnet} carries ${s.count} device(s) at Purdue level(s) ${s.levels.join("/")} with ${s.cov}% monitoring coverage, ${s.segmentation} segmentation and ${s.accessCtl} access control. Recommend how to close the visibility and segmentation gaps for this segment per IEC 62443 and NIST.")'>
+        <div class="card-b" style="padding:13px 14px">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+            <span class="mono" style="font-size:12px;color:var(--brand)">${s.subnet}</span>
+            ${s.blind?'<span class="tag sev-crit" style="margin-left:auto;font-size:9px"><span class="pip"></span>blind spot</span>':s.cov>=70?'<span class="tag sev-ok" style="margin-left:auto;font-size:9px"><span class="pip"></span>covered</span>':'<span class="tag sev-med" style="margin-left:auto;font-size:9px"><span class="pip"></span>partial</span>'}
+          </div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:9px">
+            ${s.levels.map(l=>`<span class="tag" style="background:${lvlColor(l)}22;color:${lvlColor(l)};font-size:9px">${l}</span>`).join('')}
+            <span class="tag tag-n" style="font-size:9px">${s.count} device${s.count>1?'s':''}</span>
+            ${s.crit?`<span class="tag sev-crit" style="font-size:9px"><span class="pip"></span>${s.crit} crit</span>`:''}
+          </div>
+          <div style="display:flex;gap:3px;margin-bottom:9px">
+            ${s.assets.slice(0,14).map(a=>`<span title="${esc(a.name)}" style="width:9px;height:9px;border-radius:2px;background:${a.crit==='crit'?'var(--crit)':a.crit==='high'?'var(--high)':a.status==='warn'?'var(--med)':'var(--ok)'}"></span>`).join('')}
+            ${s.count>14?`<span class="muted" style="font-size:9px">+${s.count-14}</span>`:''}
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--faint);font-family:var(--mono);margin-bottom:3px"><span>monitoring</span><span style="color:${covColor(s.cov)}">${s.cov}%</span></div>
+          <div class="barmini"><i style="width:${s.cov}%;background:${covColor(s.cov)}"></i></div>
+          <div style="display:flex;gap:10px;margin-top:8px;font-size:10px;color:var(--dim)">
+            <span>seg: <b style="color:${s.segmentation==='flat'?'var(--crit)':s.segmentation==='partial'?'var(--med)':'var(--ok)'}">${s.segmentation}</b></span>
+            <span>access: <b style="color:${s.accessCtl==='weak'?'var(--crit)':s.accessCtl==='partial'?'var(--med)':'var(--ok)'}">${s.accessCtl}</b></span>
+          </div>
+        </div></div>`).join('')}
+    </div>
+
+    <div class="card" style="margin-bottom:18px"><div class="card-h"><span class="eyebrow">IEC 62443</span><h3>VLAN \u2192 zone \u2192 conduit mapping</h3><span class="right">segmentation of inter-zone traffic</span></div>
+      <table><thead><tr><th>VLAN / subnet</th><th>Purdue zone</th><th>Upstream conduit</th><th>Protecting controls</th><th>Broker status</th></tr></thead>
+      <tbody>${vlanConduitRows(segs)}</tbody></table>
+      <div class="callout" style="margin:0 16px 14px;font-size:11.5px">A conduit is <b>brokered</b> when its zone-segmentation control (C-05) is implemented \u2014 traffic between zones is mediated and inspected. <b>Flat</b> conduits allow unmediated crossing between IT and OT, the highest-priority IEC 62443-3-2 finding.</div></div>
+
+    <div class="card" style="margin-bottom:18px"><div class="card-h"><span class="eyebrow">Rogue detection</span><h3>Unauthorized &amp; unmanaged devices</h3><span class="right">discovered vs. authorized inventory</span></div>
+      ${(()=>{
+        const rogues=rogueDevices();
+        const otRogues=rogues.filter(r=>r.isOT);
+        const banner=otRogues.length?`<div style="margin:0;padding:11px 16px;background:linear-gradient(90deg,var(--crit-bg),transparent);border-bottom:1px solid var(--line-soft);font-size:12.5px"><b style="color:var(--crit)">\u26a0 ${otRogues.length} unauthorized device(s) on OT segment(s)</b> \u2014 ${otRogues.map(r=>r.ip).join(', ')}. Treat as potential intrusion; do not disrupt live process.</div>`:'';
+        return banner+`<table><thead><tr><th>Address</th><th>MAC</th><th>Segment</th><th>Likely identity</th><th>First seen</th><th>Risk</th><th>Recommended action</th></tr></thead>
+        <tbody>${rogues.map(r=>`<tr onclick='askCyraAbout("An unauthorized device (${r.ip}, MAC ${r.mac}) was discovered on segment ${r.subnet}${r.isOT?" (an OT segment)":""}, identified as: ${r.identity}. ${r.note} Recommend an OT-safe containment and investigation procedure that does not disrupt live process.")'>
+          <td class="mono" style="color:${r.isOT?'var(--crit)':'var(--text)'}">${r.ip}</td>
+          <td class="mono muted" style="font-size:11px">${r.mac}</td>
+          <td class="mono muted">${r.subnet}</td>
+          <td><b style="font-size:12.5px">${esc(r.identity)}</b><div class="muted" style="font-size:11px">${esc(r.note)}</div></td>
+          <td class="mono muted" style="font-size:11px">${r.firstSeen}</td>
+          <td><span class="tag ${sevClass(r.risk)}"><span class="pip"></span>${r.risk}</span></td>
+          <td class="muted" style="font-size:11.5px;max-width:220px">${esc(r.action)}</td>
+        </tr>`).join('')}</tbody></table>
+        <div class="callout" style="margin:12px 16px 4px;font-size:11.5px">Detection is passive (address/MAC discovery against the authorized inventory) \u2014 no active scanning of OT. Maps to <b>ISO A.5.9</b> (inventory), <b>IEC 62443 SR 1.1</b> (identification) and <b>NIST DE.CM-01 / ID.AM-01</b>. Sample discovery data shown; production diffs live NAC/passive-discovery feeds.</div>`;
+      })()}
+    </div>
+
+    <div class="two">
+      <div class="card"><div class="card-h"><span class="eyebrow">Detail</span><h3>Segment coverage table</h3></div>
+        <table><thead><tr><th>Segment</th><th>Levels</th><th>Devices</th><th>Segmentation</th><th>Monitoring</th></tr></thead>
+        <tbody>${segs.map(s=>`<tr onclick='askCyraAbout("For segment ${s.subnet} (${s.count} devices, ${s.cov}% coverage), recommend the monitoring and segmentation controls to deploy.")'>
+          <td class="mono" style="color:${s.blind?'var(--crit)':'var(--text)'}">${s.subnet}</td>
+          <td class="mono muted" style="font-size:11px">${s.levels.join(', ')}</td>
+          <td class="mono muted">${s.count}${s.crit?` <span style="color:var(--crit)">(${s.crit}!)</span>`:''}</td>
+          <td><span class="tag" style="background:${s.segmentation==='flat'?'var(--crit-bg)':s.segmentation==='partial'?'var(--med-bg)':'var(--ok-bg)'};color:${s.segmentation==='flat'?'var(--crit)':s.segmentation==='partial'?'var(--med)':'var(--ok)'};font-size:10px">${s.segmentation}</span></td>
+          <td style="width:130px"><div style="display:flex;align-items:center;gap:8px"><div class="barmini" style="flex:1"><i style="width:${s.cov}%;background:${covColor(s.cov)}"></i></div><span class="mono muted" style="font-size:10px;min-width:28px">${s.cov}%</span></div></td>
+        </tr>`).join('')}</tbody></table></div>
+      <div>
+        <div class="card" style="margin-bottom:12px"><div class="card-h"><span class="eyebrow">Coverage by domain</span><h3>Where the gaps are</h3></div>
+          <div class="card-b">${[
+            ['Detection & monitoring','DE.CM · IEC SR 6.2',Math.round(segs.filter(s=>s.monitored).length/segs.length*100)],
+            ['Segmentation (zones/conduits)','PR.IR · IEC SR 5.1',Math.round(segs.filter(s=>s.segmentation!=='flat').length/segs.length*100)],
+            ['Access control','PR.AA · IEC SR 1.1',Math.round(segs.filter(s=>s.accessCtl!=='weak').length/segs.length*100)],
+          ].map(([t,ref,pct])=>`<div style="margin-bottom:13px">
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px"><span>${t}</span><span class="mono" style="color:${covColor(pct)}">${pct}%</span></div>
+            <div class="barmini"><i style="width:${pct}%;background:${covColor(pct)}"></i></div>
+            <div class="muted" style="font-size:10px;font-family:var(--mono);margin-top:2px">${ref}</div></div>`).join('')}</div></div>
+        <div class="card"><div class="card-h"><span class="eyebrow">Recommendations</span><h3>Close the coverage gaps</h3></div>
+          <div class="card-b">${(()=>{
+            const recs=[];
+            const blind=segs.filter(s=>s.blind);
+            if(blind.length) recs.push(['crit',`Deploy passive OT/network monitoring (SPAN/TAP + IDS) on ${blind.slice(0,3).map(s=>s.subnet).join(', ')}${blind.length>3?` and ${blind.length-3} more`:''} \u2014 currently blind.`]);
+            if(flat) recs.push(['high',`${flat} flat segment(s) detected \u2014 implement IEC 62443 zones & conduits to isolate OT from IT.`]);
+            const weakAuth=segs.filter(s=>s.accessCtl==='weak').length;
+            if(weakAuth) recs.push(['high',`Enforce per-device authentication on ${weakAuth} segment(s) with weak access control (SR 1.1).`]);
+            recs.push(['med','Centralise segment logs to the SIEM and alert on new/unknown devices joining any segment (ID.AM-03).']);
+            recs.push(['med','Baseline expected device counts per segment; investigate deviations as potential rogue devices.']);
+            return recs.map(([sev,t],i)=>`<div style="display:flex;gap:10px;align-items:flex-start;padding:9px 0;${i?'border-top:1px solid var(--line-soft)':''}">
+              <span class="tag ${sevClass(sev)}" style="margin-top:1px"><span class="pip"></span>${sev}</span><span style="flex:1;font-size:12.5px">${t}</span></div>`).join('');
+          })()}
+          <button class="btn btn-pri" style="width:100%;margin-top:10px;font-size:12px" onclick='askCyraAbout("Draft a network visibility and segmentation improvement plan for our LAN. We have ${segs.length} segments, ${segs.filter(s=>s.blind).length} unmonitored blind spot(s), and ${flat} flat segment(s). Prioritise OT-safe passive monitoring and IEC 62443 zone/conduit segmentation.")'>Ask Cyra for the coverage improvement plan</button>
+          </div></div>
+      </div>
+    </div>`;
+};
+
+/* ---- VLAN → zone → conduit mapping helpers (used by Network Coverage) ---- */
+function purdueZoneName(l){return {'L0':'Process','L1':'Basic Control','L2':'Supervisory','L3':'Operations','L3.5':'IDMZ','L4':'Site Business','L5':'Enterprise'}[l]||l;}
+const LEVEL_UP_CONDUIT={'L0':'L1-L0','L1':'L2-L1','L2':'L3-L2','L3':'L3.5-L3','L3.5':'L4-L3.5','L4':'L5-L4'};
+const ORDER_VAL={'L0':0,'L1':1,'L2':2,'L3':3,'L3.5':3.5,'L4':4,'L5':5};
+function brokerTag(b){const m={brokered:['sev-ok','brokered'],partial:['sev-med','partial'],flat:['sev-crit','flat'],top:['tag-n','top zone'],external:['sev-low','egress']};const [c,l]=m[b]||['tag-n',b];return `<span class="tag ${c}"><span class="pip"></span>${l}</span>`;}
+function vlanConduitRows(segs){
+  const d=S.data;
+  const stOf=id=>{const c=d.controls.find(x=>x.id===id);return c?c.status:'gap';};
+  const segStatus=stOf('C-05');
+  return segs.map(s=>{
+    if(s.subnet.includes('cloud')){
+      return `<tr><td class="mono">${s.subnet}</td><td>External / SaaS</td><td class="muted">Internet egress</td><td class="mono muted" style="font-size:11px">C-08 · C-12</td><td>${brokerTag('external')}</td></tr>`;
+    }
+    const lv=[...s.levels].sort((a,b)=>ORDER_VAL[a]-ORDER_VAL[b])[0];
+    const key=LEVEL_UP_CONDUIT[lv];
+    const ctrlIds=key?(CONDUIT_CTRL[key]||[]):[];
+    const gaps=ctrlIds.filter(id=>stOf(id)==='gap').length;
+    const broker=!key?'top':(segStatus==='implemented'&&gaps===0?'brokered':(segStatus==='gap'||gaps>=ctrlIds.length?'flat':'partial'));
+    return `<tr onclick='askCyraAbout("VLAN ${s.subnet} maps to the ${purdueZoneName(lv)} zone (${lv}); its upstream conduit ${key||"(top)"} is currently ${broker}. Recommend the IEC 62443-3-2 zone and conduit controls to properly broker this boundary.")'>
+      <td class="mono" style="color:var(--brand)">${s.subnet}</td>
+      <td>${purdueZoneName(lv)} <span class="mono muted" style="font-size:10px">${lv}</span></td>
+      <td class="mono muted">${key||'\u2014 (top zone)'}</td>
+      <td class="mono muted" style="font-size:11px">${ctrlIds.join(' · ')||'\u2014'}</td>
+      <td>${brokerTag(broker)}</td></tr>`;
+  }).join('');
+}
+
+/* ---- ROGUE DEVICE WATCH : NAC-style discovery, flags devices outside expected ranges / unauthorised on OT ---- */
+function rogueDevices(){
+  const holcim=[
+    {mac:'A4:2B:8C:19:74:E1',ip:'10.21.1.77',seg:'10.21.1.0/24 · Control (L1)',type:'Unknown host',reason:'Unregistered device on the control (L1) OT segment \u2014 no inventory record',sev:'crit',act:'Quarantine the switch port; verify with OT engineering before removal (process safety first)'},
+    {mac:'B8:27:EB:44:2C:88',ip:'10.21.3.99',seg:'10.21.3.0/24 · Operations (L3)',type:'Rogue wireless AP',reason:'Unauthorised wireless access point broadcasting inside an OT zone',sev:'crit',act:'Locate and disable the AP; sweep for others \u2014 wireless is prohibited in OT zones'},
+    {mac:'F0:18:98:23:AA:07',ip:'10.21.2.63',seg:'10.21.2.0/24 · Supervisory (L2)',type:'Mobile / BYOD',reason:'Personal mobile device on the supervisory OT VLAN',sev:'high',act:'Remove from OT VLAN; enforce device-admission policy (IEC 62443 SR 1.2)'},
+    {mac:'DC:A6:32:5B:11:9F',ip:'192.168.4.20',seg:'out-of-range',type:'Foreign subnet',reason:'Address outside all approved segment ranges (192.168.x on a 10.21.x network)',sev:'high',act:'Trace the physical port; likely a misconfigured or rogue device'},
+    {mac:'00:1A:2B:3C:4D:5E',ip:'10.21.4.140',seg:'10.21.4.0/24 · Site IT (L4)',type:'Unmanaged switch',reason:'Unmanaged switch/hub detected \u2014 loop and visibility risk',sev:'med',act:'Replace with a managed switch; enable port security'},
+  ];
+  const nexarch=[
+    {mac:'3C:22:FB:9A:01:44',ip:'10.0.4.201',seg:'10.0.4.0/24 · HQ (L4)',type:'Contractor laptop',reason:'Device not in the asset inventory on the corporate LAN',sev:'high',act:'Verify owner; onboard via NAC or remove'},
+    {mac:'E4:5F:01:7B:22:C0',ip:'10.0.9.45',seg:'10.0.9.0/24 · OT Lab (L1)',type:'Consumer IoT',reason:'Consumer IoT device on the demo-lab OT segment',sev:'med',act:'Isolate the lab VLAN; remove non-approved devices'},
+    {mac:'A0:99:9B:1C:6D:32',ip:'172.16.0.5',seg:'out-of-range',type:'Foreign subnet',reason:'Address outside approved ranges',sev:'med',act:'Trace and reconfigure or block'},
+  ];
+  return S.tenant==='nexarch'?nexarch:(S.tenant==='holcim'?holcim:holcim.slice(0,2));
+}
+let _rogueScanning=false;
+function runRogueScan(){ _rogueScanning=true; RENDER.rogue();
+  setTimeout(()=>{_rogueScanning=false; S._rogueScanned=true; RENDER.rogue();}, 1400); }
+RENDER.rogue=function(){
+  const known=S.data.assets.length;
+  const rogues=rogueDevices();
+  const crit=rogues.filter(r=>r.sev==='crit').length;
+  if(_rogueScanning){
+    $('#v-rogue').innerHTML=`
+      <div class="callout"><b>Passive device discovery running.</b> Observing ARP/DHCP/switch-table data \u2014 no active scanning of live control systems (OT-safe).</div>
+      <div class="card"><div class="card-b" style="padding:50px;text-align:center">
+        <div style="font-family:var(--mono);color:var(--brand);font-size:14px;margin-bottom:16px">◍ Scanning network segments\u2026</div>
+        <div class="barmini" style="max-width:340px;margin:0 auto;height:6px;overflow:hidden"><i style="width:100%;background:linear-gradient(90deg,transparent,var(--brand),transparent);animation:scan 1.2s linear infinite"></i></div>
+        <div class="muted" style="font-size:11px;margin-top:14px">Correlating observed devices against the asset inventory and approved segment ranges</div>
+      </div></div>`;
+    return;
+  }
+  if(!S._rogueScanned){
+    $('#v-rogue').innerHTML=`
+      <div class="callout"><b>Rogue &amp; unmanaged device detection.</b> Correlates devices observed on the network against the asset inventory and approved segment ranges, flagging unregistered hosts, devices outside expected ranges, and unauthorised device types on OT VLANs. Passive and OT-safe. Maps to <b>NIST DE.CM-07 / ID.AM-03</b> and <b>IEC 62443 SR 1.2 / SR 5.1</b>.</div>
+      <div class="card"><div class="card-b" style="padding:44px;text-align:center">
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px">Run a discovery scan</div>
+        <div class="muted" style="font-size:12.5px;max-width:420px;margin:0 auto 18px">Passively enumerate devices across ${S.data.assets.length ? 'your' : 'the'} network segments and flag anything that doesn\u2019t match the approved inventory.</div>
+        <button class="btn btn-pri" onclick="runRogueScan()" style="padding:11px 24px">◍ Run discovery scan</button>
+      </div></div>`;
+    return;
+  }
+  $('#v-rogue').innerHTML=`
+    <div class="callout"><b>Discovery complete.</b> Devices observed on the network are correlated against the asset inventory and approved segment ranges. Findings are ordered by severity; act on OT-segment findings with engineering in the loop (process safety first).</div>
+    <div class="three" style="margin-bottom:16px">
+      ${statCard('Known devices',known,'var(--ok)',known+rogues.length)}
+      ${statCard('Flagged devices',rogues.length,'var(--crit)',rogues.length)}
+      ${statCard('Critical / OT',crit,'var(--crit)',rogues.length)}
+    </div>
+    <div class="toolbar"><button class="btn" onclick="runRogueScan()">↻ Re-scan</button><span class="muted" style="font-size:12px">Passive discovery · last run just now</span></div>
+    <div class="card"><div class="card-h"><span class="eyebrow">Findings</span><h3>Flagged devices</h3></div>
+      <table><thead><tr><th>Device</th><th>Address</th><th>Segment</th><th>Reason</th><th>Sev</th></tr></thead>
+      <tbody>${rogues.map(r=>`<tr onclick='askCyraAbout("A ${r.type} (${r.mac}, ${r.ip}) was detected \u2014 ${r.reason}. Recommend the containment and NAC steps, keeping OT process safety in mind.")'>
+        <td><b style="font-size:12.5px">${r.type}</b><div class="mono muted" style="font-size:10.5px">${r.mac}</div></td>
+        <td class="mono" style="color:${r.seg==='out-of-range'?'var(--crit)':'var(--text)'}">${r.ip}</td>
+        <td class="mono muted" style="font-size:11px">${r.seg}</td>
+        <td class="muted" style="font-size:11.5px">${r.reason}<div style="color:var(--brand);font-size:11px;margin-top:2px">→ ${r.act}</div></td>
+        <td><span class="tag ${sevClass(r.sev)}"><span class="pip"></span>${r.sev}</span></td>
+      </tr>`).join('')}</tbody></table></div>
+    <div class="callout" style="margin-top:14px">Containment on OT segments must not disrupt live process \u2014 quarantine at the switch port and coordinate with operations. SENTRA records the finding and evidence; enforcement happens through your NAC / switch infrastructure.</div>
+    <div class="toolbar"><button class="btn btn-pri" onclick='askCyraAbout("Draft a network access control (NAC) and rogue-device response procedure for our converged IT/OT environment, covering detection, OT-safe quarantine, and device onboarding. Map to IEC 62443 SR 1.2 and NIST DE.CM-07.")'>Ask Cyra to draft the NAC / rogue-device procedure</button></div>`;
+};
 
 RENDER.risk=function(){
   const d=S.data;
@@ -968,9 +1281,10 @@ RENDER.roadmap=function(){
     ['Phase 4 ✓','SOAR & automation','IR playbook engine, automated triage (priority/SLA/routing), notification fabric (in-app/email/Semaphore SMS), continuous compliance evidence generation.','done'],
     ['Phase 5 ✓','Documentation set','ISMS manual, Statement of Applicability, IR playbook handbook, training curriculum — delivered as Word/PDF/Excel certification-grade documents.','done'],
     ['Phase 6 ✓','Enterprise & deploy','REST + PostgreSQL backend implementing the same contract, containerized (Docker) for on-prem / air-gapped OT, with operations & deployment guide and support model.','done'],
+    ['Enhancement ✓','State-of-the-art public layer','MITRE ATT&CK for ICS mapping, Dijkstra attack-path analysis, posture trend history, command palette (Ctrl+K), executive briefing generator, OpenAPI 3.0 spec, public landing page.','done'],
   ];
   $('#v-roadmap').innerHTML=`
-    <div class="callout">Delivery is <b>phased so every stage is production-usable</b>, on the NEXARCH stack (single-file HTML + Sheets/Apps Script → GitHub Pages), architected to graduate to enterprise. Status: <b style="color:var(--ok)">all six phases shipped</b> — platform, backends, intelligence, automation, documentation and enterprise deployment complete.</div>
+    <div class="callout">Delivery is <b>phased so every stage is production-usable</b>, on the NEXARCH stack (single-file HTML + Sheets/Apps Script → GitHub Pages), architected to graduate to enterprise. Status: <b style="color:var(--ok)">all phases complete — platform is state of the art and publicly deployable</b>.</div>
     <div class="grid" style="gap:12px">${phases.map(([ph,t,d,st])=>`
       <div class="card" style="border-left:3px solid ${st==='done'?'var(--ok)':st==='next'?'var(--brand)':'var(--line)'}">
         <div class="card-b" style="display:flex;gap:16px;align-items:flex-start">
@@ -978,6 +1292,20 @@ RENDER.roadmap=function(){
           <div style="flex:1"><div style="font-weight:600;font-size:14px;margin-bottom:4px">${t}</div><div class="muted" style="font-size:12.5px;line-height:1.6">${d}</div></div>
           ${st==='next'?'<span class="wip">▶ up next</span>':st==='done'?'<span class="tag sev-ok"><span class="pip"></span>shipped</span>':''}
         </div></div>`).join('')}</div>`;
+};
+
+RENDER.api=function(){
+  $('#v-api').innerHTML=`
+    <div class="callout"><b>OpenAPI 3.0 specification</b> for the SENTRA enterprise REST backend. Covers all endpoints — bootstrap, CRUD, Cyra proxy, NVD sync, notifications — with schemas for every entity. Import into Postman, Swagger UI, or any API gateway.</div>
+    <div class="toolbar"><button class="btn btn-pri" onclick="downloadOpenAPI()">⬇ Download sentra-openapi.yaml</button><button class="btn" onclick="showOpenAPI()">⌗ View inline</button></div>
+    <div class="card"><div class="card-b" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px">
+      ${[['GET /ping','Health check & version'],['GET /bootstrap','Full tenant dataset in one call'],['GET /{entity}','List tenant-scoped records'],['POST /{entity}','Create a record'],['PUT /{entity}/{key}','Update a record'],['DELETE /{entity}/{key}','Delete a record'],['POST /cyra','AI copilot proxy (Claude)'],['POST /cveSync','Live NVD CVE import'],['POST /notify','Email + SMS alert dispatch']].map(([ep,d])=>`
+        <div style="background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:12px">
+          <div class="mono" style="font-size:11.5px;color:var(--brand)">${ep}</div>
+          <div class="muted" style="font-size:12px;margin-top:4px">${d}</div>
+        </div>`).join('')}
+    </div></div>
+    <div class="callout" style="margin-top:14px">Authentication: every request requires <b>X-Auth-Token</b> header. Writes require the caller's email to be <b>admin</b> or <b>analyst</b> in the users table. The Cyra endpoint requires <b>ANTHROPIC_KEY</b> set server-side — the key never leaves the server.</div>`;
 };
 
 /* ============================================================================
@@ -1433,6 +1761,1029 @@ RENDER.evidence=function(){
 };
 
 /* ============================================================================
+   STATE-OF-THE-ART LAYER — ATT&CK for ICS · Attack-Path · Trend History · Command Palette · Executive Briefing
+   ============================================================================ */
+
+/* ---- POSTURE TREND HISTORY (localStorage-backed snapshots) ---- */
+const TREND_KEY='sentra_trend_v1';
+function snapshotPosture(){
+  const m=metrics();
+  try{
+    const snaps=JSON.parse(localStorage.getItem(TREND_KEY)||'[]');
+    snaps.push({ts:Date.now(),posture:m.posture,csf:m.csf,iso:m.isoCov,iec:m.iecCov,tenant:S.tenant});
+    // keep last 90 snapshots per tenant
+    const filtered=snaps.filter(s=>s.tenant===S.tenant).slice(-90);
+    const others=snaps.filter(s=>s.tenant!==S.tenant);
+    localStorage.setItem(TREND_KEY,JSON.stringify([...others,...filtered]));
+  }catch(e){}
+}
+function loadTrendHistory(){
+  try{
+    return JSON.parse(localStorage.getItem(TREND_KEY)||'[]').filter(s=>s.tenant===S.tenant);
+  }catch(e){return[];}
+}
+function postureDeltas(){
+  const h=loadTrendHistory(); if(h.length<2) return null;
+  const cur=h[h.length-1], prev=h[h.length-2];
+  return {delta:cur.posture-prev.posture, prev:prev.posture, cur:cur.posture};
+}
+function sparklineSVG(data,w=200,h=36,color='var(--brand)'){
+  if(!data||data.length<2) return '';
+  const min=Math.min(...data), max=Math.max(...data)||1, rng=max-min||1;
+  const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-min)/rng)*(h-4)+2}`).join(' ');
+  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" preserveAspectRatio="none" style="display:block"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+RENDER.trends=function(){
+  const h=loadTrendHistory();
+  const m=metrics();
+  const csfColors={Govern:'#6E8DF7',Identify:'#38C9DC',Protect:'#41C08A',Detect:'#E7C24B',Respond:'#F2933C',Recover:'#9d7bf0'};
+  const fmtTs=ts=>new Date(ts).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  const postureData=h.map(s=>s.posture);
+  const delta=postureDeltas();
+  if(!h.length){$('#v-trends').innerHTML=`<div class="callout">Posture snapshots are recorded automatically on each load. <b>Reload the app a few times</b> to build up the trend, or switch tenants and return.</div><div class="empty">No history yet for this tenant.</div>`;return;}
+  $('#v-trends').innerHTML=`
+    <div class="callout"><b>Posture trend history</b> records composite score and per-function coverage on every load — building a time-series audit trail of security programme progress aligned to <b>ISO 27001 clause 10</b> continual improvement and <b>NIST CSF GV.OC</b>.</div>
+    <div class="three" style="margin-bottom:16px">
+      <div class="card"><div class="card-b">
+        <div class="eyebrow" style="margin-bottom:6px">Current posture</div>
+        <div style="font-family:var(--mono);font-size:42px;font-weight:700;color:${m.posture>=75?'var(--ok)':m.posture>=50?'var(--med)':'var(--crit)'}">${m.posture}</div>
+        ${delta?`<div style="font-size:13px;margin-top:4px;color:${delta.delta>=0?'var(--ok)':'var(--crit)'}">${delta.delta>=0?'▲':'▼'} ${Math.abs(delta.delta)} vs previous snapshot</div>`:''}
+        ${sparklineSVG(postureData.slice(-20),220,48)}
+      </div></div>
+      <div class="card"><div class="card-b">
+        <div class="eyebrow" style="margin-bottom:6px">Snapshots recorded</div>
+        <div style="font-family:var(--mono);font-size:42px;font-weight:700;color:var(--brand)">${h.length}</div>
+        <div class="muted" style="font-size:12px;margin-top:6px">First: ${fmtTs(h[0].ts)}</div>
+        <div class="muted" style="font-size:12px">Latest: ${fmtTs(h[h.length-1].ts)}</div>
+      </div></div>
+      <div class="card"><div class="card-b">
+        <div class="eyebrow" style="margin-bottom:6px">Best / worst posture</div>
+        <div style="display:flex;gap:14px;align-items:baseline">
+          <div><span class="mono" style="font-size:28px;color:var(--ok)">${Math.max(...postureData)}</span> <span class="muted" style="font-size:11px">peak</span></div>
+          <div><span class="mono" style="font-size:28px;color:var(--crit)">${Math.min(...postureData)}</span> <span class="muted" style="font-size:11px">low</span></div>
+        </div>
+        <div class="barmini" style="margin-top:14px"><i style="width:${m.posture}%;background:${m.posture>=75?'var(--ok)':m.posture>=50?'var(--med)':'var(--crit)'}"></i></div>
+      </div></div>
+    </div>
+    <div class="two" style="margin-bottom:16px">
+      <div class="card"><div class="card-h"><span class="eyebrow">Composite</span><h3>Posture over time</h3></div>
+        <div class="card-b">
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+            ${h.slice(-10).reverse().map(s=>`<div style="text-align:center;min-width:52px"><div class="mono" style="font-size:15px;font-weight:700;color:${s.posture>=75?'var(--ok)':s.posture>=50?'var(--med)':'var(--crit)'}">${s.posture}</div><div style="font-size:9px;color:var(--faint)">${new Date(s.ts).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</div></div>`).join('<div style="color:var(--line);align-self:center">→</div>')}
+          </div>
+          ${h.length>=3?sparklineSVG(postureData,480,60):'<div class="muted" style="font-size:12px">Load the app a few more times to build the trend.</div>'}
+        </div></div>
+      <div class="card"><div class="card-h"><span class="eyebrow">NIST CSF 2.0</span><h3>Function scores (latest)</h3></div>
+        <div class="card-b">${Object.entries(m.csf).map(([fn,v])=>`
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div style="width:7px;height:7px;border-radius:50%;background:${csfColors[fn]};flex:none"></div>
+            <div style="width:80px;font-size:12.5px">${fn}</div>
+            <div class="barmini" style="flex:1"><i style="width:${v}%;background:${csfColors[fn]}"></i></div>
+            <div class="mono muted" style="font-size:12px;width:36px;text-align:right">${v}%</div>
+            ${h.length>=2?`<div style="width:80px">${sparklineSVG(h.slice(-10).map(s=>s.csf&&s.csf[fn]||0),80,22,csfColors[fn])}</div>`:''}
+          </div>`).join('')}
+        </div></div>
+    </div>
+    <div class="card"><div class="card-h"><span class="eyebrow">Log</span><h3>Snapshot history</h3><span class="right"><button class="btn" style="font-size:11px;padding:4px 9px" onclick="clearTrend()">Clear history</button></span></div>
+      <table><thead><tr><th>When</th><th>Posture</th><th>ISO</th><th>IEC</th><th>Govern</th><th>Identify</th><th>Protect</th><th>Detect</th><th>Respond</th><th>Recover</th></tr></thead>
+      <tbody>${[...h].reverse().slice(0,20).map(s=>`<tr><td class="mono muted" style="font-size:11px">${fmtTs(s.ts)}</td><td><b class="mono" style="color:${s.posture>=75?'var(--ok)':s.posture>=50?'var(--med)':'var(--crit)'}">${s.posture}</b></td><td class="mono muted">${s.iso||'—'}%</td><td class="mono muted">${s.iec||'—'}%</td>${Object.values(s.csf||{}).map(v=>`<td class="mono muted">${v}%</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+};
+function clearTrend(){
+  if(!confirm('Clear all posture history for this tenant?'))return;
+  try{const all=JSON.parse(localStorage.getItem(TREND_KEY)||'[]');localStorage.setItem(TREND_KEY,JSON.stringify(all.filter(s=>s.tenant!==S.tenant)));}catch(e){}
+  RENDER.trends();
+}
+
+/* ---- SOCIAL MEDIA & BRAND SECURITY (defensive: the org's OWN accounts/brand) ----
+   Scope note: this module assesses and protects the organization's own social
+   presence and brand. It does NOT monitor the public's posts or regional traffic
+   — that would be surveillance, out of scope for a defensive security platform. */
+const SOCIAL_PLATFORMS=[
+  {p:'Facebook',handle:'@NEXARCHSystems',mfa:'pass',admins:'warn',verified:'pass',recovery:'pass',monitor:'warn'},
+  {p:'LinkedIn',handle:'NEXARCH Systems',mfa:'pass',admins:'pass',verified:'pass',recovery:'pass',monitor:'pass'},
+  {p:'X (Twitter)',handle:'@nexarch',mfa:'warn',admins:'warn',verified:'fail',recovery:'warn',monitor:'fail'},
+  {p:'Instagram',handle:'@nexarch.systems',mfa:'pass',admins:'pass',verified:'fail',recovery:'warn',monitor:'warn'},
+  {p:'YouTube',handle:'NEXARCH',mfa:'pass',admins:'warn',verified:'pass',recovery:'pass',monitor:'fail'},
+];
+const SOCIAL_FINDINGS=[
+  ['Account takeover exposure','high','No enforced MFA on the X (Twitter) corporate account; single shared admin login in use.','Enforce hardware/app-based MFA on every account; remove shared logins; assign named admins with least privilege.','A.8.5','PR.AA-01'],
+  ['Brand impersonation','crit','Two Facebook pages and one X account impersonate the NEXARCH brand, one soliciting "support payments" (phishing).','Report impersonation via each platform\u2019s official brand-abuse channel; warn customers; register defensive handles.','A.5.24','RS.CO'],
+  ['Data leakage in posts','med','A site photo posted publicly exposes an HMI screen with readable IP addressing and process tags.','Add a pre-publication review step; strip metadata/geotags; train staff on OT-sensitive imagery.','A.5.34','PR.DS-02'],
+  ['Employee credential exposure','high','Corporate email addresses of three admins appear in a third-party breach corpus, raising credential-stuffing risk on social logins.','Force password reset + MFA; monitor for reuse; enable login alerts.','A.8.5','PR.AA-01'],
+  ['No social-media policy','med','No documented governance for who may post, approval flow, or incident handling for account compromise.','Publish a social-media security policy and incident procedure; add to awareness training.','A.5.1','GV.PO'],
+  ['Weak monitoring','med','No alerting for unauthorized posts, admin changes, or impersonation across most platforms.','Enable native login/admin-change alerts; subscribe to a brand-protection/takedown service.','A.8.16','DE.CM-01'],
+];
+const IMPERSONATION=[
+  {t:'Facebook page "NEXARCH Support"',risk:'crit',note:'Solicits "device unlock" payments — phishing. Uses copied logo.',act:'Report via Facebook brand-abuse / IP form'},
+  {t:'X account @nexarch_help',risk:'high',note:'Impersonates support; DMs customers asking for credentials.',act:'Report via X impersonation report'},
+  {t:'Lookalike domain nexarch-support[.]com',risk:'high',note:'Hosts a fake login page mirroring the brand.',act:'Report to registrar/host; add to blocklist; consider takedown service'},
+];
+/* Geographic ORIGIN of malicious traffic hitting the ORG'S OWN perimeter (defensive geo-IP) */
+const ATTACK_ORIGIN=[
+  ['Unattributed / TOR exit',38,'Credential-stuffing on VPN & social logins'],
+  ['Region A',22,'Scanning of IDMZ perimeter'],
+  ['Region B',17,'Phishing infrastructure hosting'],
+  ['Region C',13,'Bot traffic / impersonation pages'],
+  ['Other',10,'Low-volume probes'],
+];
+function socialScore(){
+  let pts=0,max=0; SOCIAL_PLATFORMS.forEach(p=>['mfa','admins','verified','recovery','monitor'].forEach(k=>{max+=2;pts+=p[k]==='pass'?2:p[k]==='warn'?1:0;}));
+  return Math.round(pts/max*100);
+}
+/* safe-posting recommendations — [meets?, guidance]. Directly addresses "what is safe to post". */
+const SAFE_POSTING=[
+  [true,'Enable MFA on every corporate social account; keep admins to a named few.'],
+  [false,'Never post photos of control rooms, HMI/SCADA screens or PLC cabinets.'],
+  [false,'Never show employee badges, access cards, keys or lanyards in images.'],
+  [true,'Avoid naming specific equipment vendors, models, IPs or network details.'],
+  [false,'Don\u2019t announce executive travel or site visits before or during them.'],
+  [true,'Route official posts through a post-approval workflow; watermark images.'],
+  [false,'Strip photo metadata (EXIF/geotags) before uploading site imagery.'],
+  [true,'Monitor monthly for impersonation / typosquatted pages and report them.'],
+  [true,'Train staff that DMs and comments are social-engineering vectors (A.6.3).'],
+  [false,'Don\u2019t post incident details or downtime that reveal security weaknesses.'],
+];
+RENDER.social=function(){
+  const score=socialScore();
+  const sc={pass:'var(--ok)',warn:'var(--med)',fail:'var(--crit)'};
+  const lbl={pass:'✓',warn:'!',fail:'✕'};
+  $('#v-social').innerHTML=`
+    <div class="callout"><b>Defensive scope.</b> This module protects the <b>organization\u2019s own</b> social accounts and brand \u2014 account hygiene, data-leakage exposure, and impersonation/phishing that abuses your identity. It does <b>not</b> monitor the public\u2019s posts or regional traffic; suspected illegal content is handled through each platform\u2019s official abuse channel and law enforcement\u2019s legal process, not by monitoring here.</div>
+    <div class="three" style="margin-bottom:16px">
+      ${statCard('Social security score',score,score>=70?'var(--ok)':score>=45?'var(--med)':'var(--crit)',100)}
+      ${statCard('Impersonation alerts',IMPERSONATION.length,'var(--crit)',IMPERSONATION.length)}
+      ${statCard('Open findings',SOCIAL_FINDINGS.length,'var(--high)',SOCIAL_FINDINGS.length)}
+    </div>
+    <div class="card" style="margin-bottom:16px"><div class="card-h"><span class="eyebrow">Account hygiene</span><h3>Corporate account posture</h3></div>
+      <table><thead><tr><th>Platform</th><th>Handle</th><th>MFA</th><th>Admin access</th><th>Verified</th><th>Recovery</th><th>Monitoring</th></tr></thead>
+      <tbody>${SOCIAL_PLATFORMS.map(p=>`<tr>
+        <td><b>${p.p}</b></td><td class="mono muted">${p.handle}</td>
+        ${['mfa','admins','verified','recovery','monitor'].map(k=>`<td><span class="tag" style="background:${sc[p[k]]}22;color:${sc[p[k]]}"><span class="pip" style="background:${sc[p[k]]}"></span>${lbl[p[k]]}</span></td>`).join('')}
+      </tr>`).join('')}</tbody></table></div>
+    <div class="two" style="margin-bottom:16px">
+      <div class="card"><div class="card-h"><span class="eyebrow">Findings</span><h3>Risks & recommendations</h3></div>
+        <table><thead><tr><th>Finding</th><th>Sev</th><th>Recommendation</th><th>Maps to</th></tr></thead>
+        <tbody>${SOCIAL_FINDINGS.map(f=>`<tr onclick='askCyraAbout("For our corporate social media, address this finding: ${f[0]} \u2014 ${f[2]} Provide a concrete remediation plan aligned to ISO ${f[4]} and NIST ${f[5]}.")'>
+          <td><b style="font-size:12.5px">${f[0]}</b><div class="muted" style="font-size:11px">${f[2]}</div></td>
+          <td><span class="tag ${sevClass(f[1])}"><span class="pip"></span>${f[1]}</span></td>
+          <td class="muted" style="font-size:11.5px">${f[3]}</td>
+          <td class="mono muted" style="font-size:10.5px">ISO ${f[4]}<br>${f[5]}</td>
+        </tr>`).join('')}</tbody></table></div>
+      <div>
+        <div class="card" style="margin-bottom:12px"><div class="card-h"><span class="eyebrow">Brand protection</span><h3>Impersonation & phishing watch</h3></div>
+          <div class="card-b">${IMPERSONATION.map((im,i)=>`
+            <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;${i?'border-top:1px solid var(--line-soft)':''}">
+              <span class="tag ${sevClass(im.risk)}" style="margin-top:2px"><span class="pip"></span>${im.risk}</span>
+              <div style="flex:1"><div style="font-weight:600;font-size:12.5px">${esc(im.t)}</div>
+                <div class="muted" style="font-size:11px">${esc(im.note)}</div>
+                <div style="font-size:11px;color:var(--brand);margin-top:3px">→ ${esc(im.act)}</div></div>
+            </div>`).join('')}
+            <div class="callout" style="margin-top:12px;font-size:11.5px">Takedowns go through each platform\u2019s official brand/impersonation report form and, where a crime is involved, law enforcement. SENTRA tracks the case and evidence; it does not act against accounts directly.</div>
+          </div></div>
+        <div class="card"><div class="card-h"><span class="eyebrow">Threat intel</span><h3>Attack origin — traffic hitting our perimeter</h3></div>
+          <div class="card-b">
+            <div class="muted" style="font-size:11px;margin-bottom:10px">Geographic origin of malicious traffic detected against <b>our own</b> assets (firewall/IDS). Defensive geo-IP only.</div>
+            ${ATTACK_ORIGIN.map(([r,pct,note])=>`<div style="margin-bottom:9px">
+              <div style="display:flex;justify-content:space-between;font-size:12px"><span>${r}</span><span class="mono muted">${pct}%</span></div>
+              <div class="barmini"><i style="width:${pct*2.6}%;background:var(--high)"></i></div>
+              <div class="muted" style="font-size:10.5px;margin-top:2px">${note}</div></div>`).join('')}
+            <div class="muted" style="font-size:10.5px;margin-top:8px">Regions are generalized; specifics come from the connected firewall/threat feed in production.</div>
+          </div></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:16px"><div class="card-h"><span class="eyebrow">Recommendations</span><h3>Safe posting checklist \u2014 Facebook &amp; other channels</h3><span class="right">for OT/industrial operators</span></div>
+      <div class="card-b" style="display:grid;grid-template-columns:1fr 1fr;gap:9px 20px">
+        ${SAFE_POSTING.map(([ok,t])=>`<div style="display:flex;gap:9px;align-items:flex-start">
+          <span style="width:18px;height:18px;border-radius:5px;flex:none;background:${ok?'var(--ok)':'var(--crit)'}22;color:${ok?'var(--ok)':'var(--crit)'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:1px">${ok?'\u2713':'\u2715'}</span>
+          <span style="font-size:12.5px">${t}</span></div>`).join('')}
+      </div>
+      <div class="callout" style="margin-top:12px;font-size:11.5px">These practices reduce OSINT value to attackers and map to <b>ISO 27001 A.6.3</b> (awareness) and <b>NIST PR.AT-01</b>. Bake them into a post-approval workflow.</div></div>
+    <div class="toolbar"><button class="btn btn-pri" onclick='askCyraAbout("Draft a corporate social-media security policy and an account-compromise incident procedure for NEXARCH, covering MFA, admin least-privilege, posting approval, impersonation takedown via official channels, and staff awareness. Map to ISO 27001 and NIST CSF.")'>Ask Cyra to draft the social-media security policy</button>
+      <button class="btn" onclick='askCyraAbout("Write clear do-and-don\u0027t social media posting guidelines for plant and office staff at an industrial operator, focused on not leaking OT/security-sensitive information on Facebook and other platforms.")'>Ask Cyra for staff posting guidelines</button></div>`;
+};
+
+/* ---- THREAT GEOGRAPHY : inbound internet traffic & attacks by region ---- */
+function geoData(){
+  // representative perimeter telemetry; seeded per tenant. In production this
+  // comes from the connected firewall / WAF / CDN / threat-intel feed.
+  const base=[
+    ['Philippines','PH',null,'legitimate','trusted'],
+    ['United States','US',null,'mixed','neutral'],
+    ['Singapore','SG',null,'legitimate','trusted'],
+    ['Netherlands','NL',null,'hosting/scan','watch'],
+    ['China','CN',null,'scanning','watch'],
+    ['Russia','RU',null,'brute-force','hostile'],
+    ['Vietnam','VN',null,'botnet','watch'],
+    ['Brazil','BR',null,'botnet','watch'],
+    ['Germany','DE',null,'hosting','neutral'],
+    ['Unknown / Tor','--',null,'anonymized','hostile'],
+  ];
+  // deterministic pseudo-random by tenant so numbers are stable per tenant
+  let seed=[...S.tenant].reduce((a,c)=>a+c.charCodeAt(0),0);
+  const rnd=()=>{ seed=(seed*9301+49297)%233280; return seed/233280; };
+  return base.map((r,i)=>{
+    const legit=r[4]==='trusted';
+    const requests=Math.round((legit?18000:2500)*(0.6+rnd()*1.2)/(i*0.4+1))+ (legit?9000:200);
+    const blockRate=r[4]==='hostile'?0.82+rnd()*0.15:r[4]==='watch'?0.35+rnd()*0.3:0.02+rnd()*0.05;
+    const blocked=Math.round(requests*blockRate);
+    const threats=r[4]==='hostile'?Math.round(requests*(0.15+rnd()*0.2)):r[4]==='watch'?Math.round(requests*(0.04+rnd()*0.06)):Math.round(requests*0.002);
+    const spike=r[4]!=='trusted'&&rnd()>0.72;
+    return {region:r[0],code:r[1],category:r[3],trust:r[4],requests,blocked,threats,blockRate,spike};
+  }).sort((a,b)=>b.threats-a.threats);
+}
+RENDER.geo=function(){
+  const g=geoData();
+  const totalReq=g.reduce((s,r)=>s+r.requests,0);
+  const totalBlocked=g.reduce((s,r)=>s+r.blocked,0);
+  const totalThreats=g.reduce((s,r)=>s+r.threats,0);
+  const hostile=g.filter(r=>r.trust==='hostile');
+  const spikes=g.filter(r=>r.spike);
+  const trustColor={trusted:'var(--ok)',neutral:'var(--low)',watch:'var(--high)',hostile:'var(--crit)'};
+  const maxThreat=Math.max(...g.map(r=>r.threats),1);
+  const fmt=n=>n>=1000?(n/1000).toFixed(1)+'k':n;
+  $('#v-geo').innerHTML=`
+    <div class="callout"><b>Defensive geo-IP telemetry.</b> Geographic origin of inbound traffic and attacks detected against <b>our own</b> perimeter (firewall / WAF / IDS). Used to tune geo-blocking and rate-limiting \u2014 not to monitor individuals. Sample data shown; production draws from the connected security stack. Maps to <b>NIST DE.CM-01</b> and <b>ISO A.8.16</b>.</div>
+    <div class="three" style="margin-bottom:16px">
+      ${statCard('Inbound requests (24h)',fmt(totalReq),'var(--brand)',totalReq)}
+      <div class="card"><div class="card-b" style="display:flex;align-items:center;gap:14px">
+        <div style="font-family:var(--mono);font-size:30px;font-weight:700;color:var(--high)">${Math.round(totalBlocked/totalReq*100)}%</div>
+        <div style="flex:1"><div style="font-weight:600;font-size:13px">Blocked at perimeter</div><div class="muted" style="font-size:11px;margin-top:2px">${fmt(totalBlocked)} of ${fmt(totalReq)} requests</div></div></div></div>
+      ${statCard('Threat events',fmt(totalThreats),'var(--crit)',totalThreats)}
+    </div>
+    ${spikes.length?`<div class="banner" style="border-color:rgba(240,91,87,.3);background:linear-gradient(90deg,var(--crit-bg),transparent)"><b>\u26a0 Anomaly:</b> unusual traffic spike from ${spikes.map(s=>s.region).join(', ')} \u2014 review firewall logs and consider temporary rate-limiting.<span class="std-badge" style="margin-left:auto">DE.AE-02</span></div>`:''}
+    <div class="two">
+      <div class="card"><div class="card-h"><span class="eyebrow">By region</span><h3>Inbound traffic &amp; threats</h3><span class="right">${g.length} regions</span></div>
+        <table><thead><tr><th>Region</th><th>Requests</th><th>Blocked</th><th>Threats</th><th>Profile</th></tr></thead>
+        <tbody>${g.map(r=>`<tr onclick='askCyraAbout("Traffic from ${r.region} shows ${r.threats} threat events and a ${Math.round(r.blockRate*100)}% block rate against our perimeter (profile: ${r.category}). Recommend geo-blocking, rate-limiting or allow-listing actions and the firewall/WAF controls to apply.")'>
+          <td><b style="font-size:12.5px">${esc(r.region)}</b> <span class="mono muted" style="font-size:10px">${r.code}</span>${r.spike?' <span class="tag sev-crit" style="font-size:9px"><span class="pip"></span>spike</span>':''}</td>
+          <td class="mono muted">${fmt(r.requests)}</td>
+          <td class="mono" style="color:var(--high)">${fmt(r.blocked)}</td>
+          <td style="width:150px"><div style="display:flex;align-items:center;gap:8px"><span class="mono" style="color:var(--crit);min-width:34px">${fmt(r.threats)}</span><div class="barmini" style="flex:1"><i style="width:${r.threats/maxThreat*100}%;background:var(--crit)"></i></div></div></td>
+          <td><span class="tag" style="background:${trustColor[r.trust]}22;color:${trustColor[r.trust]}"><span class="pip" style="background:${trustColor[r.trust]}"></span>${r.category}</span></td>
+        </tr>`).join('')}</tbody></table></div>
+      <div>
+        <div class="card" style="margin-bottom:12px"><div class="card-h"><span class="eyebrow">Recommendations</span><h3>Geo-defense actions</h3></div>
+          <div class="card-b">${[
+            hostile.length?['crit',`Geo-block or challenge traffic from ${hostile.map(h=>h.region).join(', ')} \u2014 high block rate with active threat events and no legitimate business need.`]:null,
+            spikes.length?['high',`Apply temporary rate-limiting to ${spikes.map(s=>s.region).join(', ')} pending investigation of the traffic spike.`]:null,
+            ['high','Enforce WAF rules and IDS signatures on the perimeter for scanning/botnet categories; alert on new hostile-region sources.'],
+            ['med','Allow-list trusted regions (Philippines, Singapore) for admin interfaces; deny admin access from anonymized/Tor origins.'],
+            ['med','Feed these blocks into the audit log and review geo-policy at the monthly management review.'],
+          ].filter(Boolean).map(([sev,t],i)=>`<div style="display:flex;gap:10px;align-items:flex-start;padding:9px 0;${i?'border-top:1px solid var(--line-soft)':''}">
+            <span class="tag ${sevClass(sev)}" style="margin-top:1px"><span class="pip"></span>${sev}</span>
+            <span style="flex:1;font-size:12.5px">${t}</span></div>`).join('')}</div></div>
+        <div class="card"><div class="card-h"><span class="eyebrow">Posture</span><h3>Source trust mix</h3></div>
+          <div class="card-b">${['trusted','neutral','watch','hostile'].map(tr=>{
+            const rs=g.filter(r=>r.trust===tr); const req=rs.reduce((s,r)=>s+r.requests,0);
+            const pct=Math.round(req/totalReq*100);
+            return `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="text-transform:capitalize">${tr} (${rs.length})</span><span class="mono muted">${pct}%</span></div>
+              <div class="barmini"><i style="width:${pct}%;background:${trustColor[tr]}"></i></div></div>`;
+          }).join('')}
+          <button class="btn" style="width:100%;margin-top:8px;font-size:12px" onclick='askCyraAbout("Based on our inbound traffic by region (hostile sources: ${hostile.map(h=>h.region).join(", ")||"none"}), draft a geo-blocking and rate-limiting policy for our perimeter firewall/WAF, with exceptions for legitimate business regions.")'>Ask Cyra to draft the geo-blocking policy</button>
+          </div></div>
+      </div>
+    </div>`;
+};
+
+/* ---- ATTACK-PATH ANALYSIS (Dijkstra on Purdue conduit graph) ----
+   Nodes are Purdue levels; edges are conduit boundaries weighted by the
+   implementation status of the controls protecting them. Fewer gaps = lower
+   weight = a path more attractive to an adversary. Dijkstra finds the path
+   of minimum resistance from L5 (enterprise) to L0 (process). */
+const CONDUIT_CTRL={
+  'L5-L4':['C-05','C-21','C-07'], // WAN/internet boundary
+  'L4-L3.5':['C-05','C-06','C-08','C-22'], // corporate→IDMZ
+  'L3.5-L3':['C-05','C-06','C-08','C-19'], // IDMZ→OT operations
+  'L3-L2':['C-05','C-13','C-21'],           // OT ops→supervisory
+  'L2-L1':['C-06','C-09','C-11','C-14'],   // supervisory→control
+  'L1-L0':['C-12','C-23'],                 // control→process
+};
+const PURDUE_NODES=['L5','L4','L3.5','L3','L2','L1','L0'];
+function buildGraph(controls){
+  const statusOf=id=>{ const c=controls.find(x=>x.id===id); return c?c.status:'gap'; };
+  const edges={};
+  PURDUE_NODES.forEach(n=>edges[n]=[]);
+  const pairs=[['L5','L4'],['L4','L3.5'],['L3.5','L3'],['L3','L2'],['L2','L1'],['L1','L0']];
+  pairs.forEach(([a,b])=>{
+    const key=`${a}-${b}`;
+    const ctrlIds=CONDUIT_CTRL[key]||[];
+    const gaps=ctrlIds.filter(id=>statusOf(id)==='gap').length;
+    const partial=ctrlIds.filter(id=>statusOf(id)==='partial').length;
+    // adversary weight: gap = 1, partial = 1.5, implemented = 3 (harder)
+    const weight=ctrlIds.reduce((s,id)=>{
+      const st=statusOf(id); return s+(st==='gap'?1:st==='partial'?1.5:3);
+    },0)||1;
+    const resistance=ctrlIds.length? Math.round((1-gaps/ctrlIds.length)*100) : 0;
+    edges[a].push({to:b,weight,key,ctrlIds,gaps,partial,resistance});
+    edges[b].push({to:a,weight,key,ctrlIds,gaps,partial,resistance}); // bidirectional
+  });
+  return edges;
+}
+function dijkstra(graph,src,dst){
+  const dist={},prev={},visited=new Set(),Q=new Set(PURDUE_NODES);
+  PURDUE_NODES.forEach(n=>dist[n]=Infinity); dist[src]=0;
+  while(Q.size){
+    const u=[...Q].reduce((a,b)=>dist[a]<dist[b]?a:b);
+    if(u===dst)break; Q.delete(u); visited.add(u);
+    (graph[u]||[]).forEach(e=>{
+      if(visited.has(e.to))return;
+      const alt=dist[u]+e.weight;
+      if(alt<dist[e.to]){dist[e.to]=alt;prev[e.to]={from:u,edge:e};}
+    });
+  }
+  // reconstruct path
+  const path=[]; let cur=dst;
+  while(cur&&prev[cur]){path.unshift({node:cur,...prev[cur]});cur=prev[cur].from;}
+  path.unshift({node:src});
+  return{path,totalWeight:dist[dst]};
+}
+function weakestControls(path,controls){
+  const gaps=[];
+  path.slice(1).forEach(step=>{
+    (step.edge.ctrlIds||[]).forEach(id=>{
+      const c=controls.find(x=>x.id===id);
+      if(c&&c.status!=='implemented') gaps.push({...c,edge:step.edge.key});
+    });
+  });
+  return [...new Map(gaps.map(g=>[g.id,g])).values()].sort((a,b)=>a.status==='gap'&&b.status!=='gap'?-1:1);
+}
+RENDER.attackpath=function(){
+  const d=S.data;
+  const graph=buildGraph(d.controls);
+  const {path,totalWeight}=dijkstra(graph,'L5','L0');
+  const critical=weakestControls(path,d.controls).slice(0,3);
+  const LVLNAMES={'L5':'Enterprise (L5)','L4':'Site Business (L4)','L3.5':'IDMZ (L3.5)','L3':'Operations (L3)','L2':'Supervisory (L2)','L1':'Control (L1)','L0':'Process (L0)'};
+  const resistPct=path.slice(1).reduce((s,p)=>s+(p.edge.resistance||0),0)/Math.max(path.length-1,1);
+  const threat=resistPct<40?{l:'HIGH',c:'var(--crit)'}:resistPct<70?{l:'MEDIUM',c:'var(--high)'}:{l:'LOW',c:'var(--ok)'};
+  $('#v-attackpath').innerHTML=`
+    <div class="callout"><b>Adversary path analysis.</b> The Purdue model is modelled as a weighted graph; each conduit boundary is weighted by the implementation status of controls protecting it. <b>Dijkstra's algorithm</b> finds the path of minimum resistance from the enterprise network (L5) to the live process (L0), using your actual control gaps.</div>
+    <div class="three" style="margin-bottom:16px">
+      ${statCard('Hops to L0',path.length-1,'var(--brand)',6)}
+      <div class="card"><div class="card-b" style="display:flex;align-items:center;gap:14px">
+        <div style="font-family:var(--mono);font-size:30px;font-weight:700;color:${threat.c}">${threat.l}</div>
+        <div style="flex:1"><div style="font-weight:600;font-size:13px">Overall threat level</div><div class="muted" style="font-size:11px;margin-top:2px">${Math.round(resistPct)}% avg. conduit resistance</div></div>
+      </div></div>
+      ${statCard('Critical gap controls',critical.length,'var(--crit)',d.controls.length)}
+    </div>
+    <div class="two" style="margin-bottom:16px">
+      <div class="card"><div class="card-h"><span class="eyebrow">Dijkstra result</span><h3>Minimum-resistance adversary path</h3></div>
+        <div class="card-b">
+          ${path.map((step,i)=>{
+            const lvlColor={'L5':'#6E8DF7','L4':'#6E8DF7','L3.5':'#E7C24B','L3':'#41C08A','L2':'#41C08A','L1':'#F2933C','L0':'#F05B57'}[step.node]||'var(--dim)';
+            return `<div style="display:flex;align-items:center;gap:0">
+              <div style="display:flex;flex-direction:column;align-items:center;margin-right:12px">
+                <div style="width:36px;height:36px;border-radius:50%;background:${lvlColor}22;border:2px solid ${lvlColor};display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;color:${lvlColor}">${step.node}</div>
+                ${i<path.length-1?`<div style="width:2px;height:28px;background:${step.edge.gaps?'var(--crit)':'var(--line)'}"></div>`:''}
+              </div>
+              <div style="flex:1;padding:${i<path.length-1?'0 0 28px':0}">
+                <div style="font-weight:600;font-size:13px">${LVLNAMES[step.node]||step.node}</div>
+                ${step.edge?`<div class="muted" style="font-size:11px;font-family:var(--mono)">conduit weight ${step.edge.weight.toFixed(1)} · ${step.edge.gaps} gap(s) · ${Math.round(step.edge.resistance)}% resistance
+                  ${step.edge.gaps?`<span class="tag sev-crit" style="margin-left:6px"><span class="pip"></span>vulnerable conduit</span>`:''}</div>`:''}
+              </div></div>`;
+          }).join('')}
+        </div></div>
+      <div>
+        <div class="card" style="margin-bottom:12px"><div class="card-h"><span class="eyebrow">Critical controls to close</span><h3>Blocking the attack path</h3></div>
+          <div class="card-b">${critical.length?critical.map((c,i)=>`
+            <div style="display:flex;gap:11px;align-items:flex-start;padding:9px 0;${i?'border-top:1px solid var(--line-soft)':''}">
+              <div style="width:24px;height:24px;border-radius:6px;background:${statusColor(c.status)}22;color:${statusColor(c.status)};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex:none">${i+1}</div>
+              <div style="flex:1"><div style="font-weight:600;font-size:13px">${esc(c.name)}</div>
+                <div style="font-size:11px;margin-top:2px"><span class="mono" style="color:var(--brand)">${c.id}</span> · conduit ${c.edge} · <span style="color:${statusColor(c.status)}">${c.status}</span></div>
+                <div class="muted" style="font-size:11px">ISO ${c.iso} · IEC ${c.iec} · ${c.nist}</div></div>
+              <button class="btn" style="font-size:11px;padding:4px 8px" onclick='askCyraAbout("On the adversary path from L5 to L0, control ${c.id} (${c.name}) on conduit ${c.edge} is in ${c.status} status and is the critical bottleneck. Draft a concrete remediation plan to implement it and close this attack path.")'>Plan ▸</button>
+            </div>`).join(''):'<div class="muted">No critical gaps on this path.</div>'}</div></div>
+        <div class="card"><div class="card-h"><span class="eyebrow">Conduit summary</span><h3>All boundaries</h3></div>
+          <table><thead><tr><th>Conduit</th><th>Controls</th><th>Gaps</th><th>Resistance</th></tr></thead>
+          <tbody>${Object.entries(CONDUIT_CTRL).map(([k,ids])=>{
+            const ctls=ids.map(id=>d.controls.find(c=>c.id===id)).filter(Boolean);
+            const g=ctls.filter(c=>c.status==='gap').length;
+            const res=ids.length?Math.round((1-g/ids.length)*100):100;
+            return `<tr><td class="mono" style="color:var(--brand)">${k}</td><td class="mono muted">${ids.length}</td>
+              <td><span class="tag ${g?'sev-crit':'sev-ok'}"><span class="pip"></span>${g}</span></td>
+              <td style="width:130px"><div style="display:flex;align-items:center;gap:8px"><div class="barmini" style="flex:1"><i style="width:${res}%;background:${res>=70?'var(--ok)':res>=40?'var(--med)':'var(--crit)'}"></i></div><span class="mono muted" style="font-size:10px">${res}%</span></div></td></tr>`;
+          }).join('')}</tbody></table></div>
+      </div>
+    </div>`;
+};
+
+/* ---- OPENAPI 3.0 SPECIFICATION builder ---- */
+function buildOpenAPI(){
+  return `openapi: "3.0.3"
+info:
+  title: SENTRA by NEXARCH — Enterprise API
+  description: |
+    REST backend for the SENTRA converged IT/OT cybersecurity management platform.
+    Implements the DataAdapter contract used by the SENTRA front-end.
+    Aligned to ISO/IEC 27001:2022 · IEC 62443 · NIST CSF 2.0.
+  version: "6.0.0"
+  contact:
+    name: NEXARCH Systems Engineering
+    url: https://nexarch.example
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://sentra.nexarch.example/api
+    description: Production
+  - url: http://localhost:8080/api
+    description: Local development
+
+security:
+  - ApiToken: []
+
+components:
+  securitySchemes:
+    ApiToken:
+      type: apiKey
+      in: header
+      name: X-Auth-Token
+
+  schemas:
+    Tenant:
+      type: object
+      properties:
+        id:       { type: string, example: holcim }
+        name:     { type: string, example: Holcim Davao }
+        tag:      { type: string, enum: [INTERNAL, CLIENT] }
+        color:    { type: string, example: "#F2933C" }
+        sector:   { type: string, example: Cement Manufacturing }
+        sites:    { type: integer, example: 1 }
+    Asset:
+      type: object
+      properties:
+        tenant:   { type: string }
+        id:       { type: string, example: H-PLC-01 }
+        name:     { type: string }
+        type:     { type: string, enum: [PLC, RTU, HMI, SCADA, Historian, Firewall, Server, Workstation, Switch, Storage, Endpoint, Cloud, Gateway] }
+        level:    { type: string, enum: [L0, L1, L2, L3, L3.5, L4, L5] }
+        vendor:   { type: string }
+        ip:       { type: string }
+        crit:     { type: string, enum: [crit, high, med, low] }
+        status:   { type: string, enum: [online, warn, offline] }
+        zone:     { type: string }
+    Risk:
+      type: object
+      properties:
+        tenant:       { type: string }
+        id:           { type: string }
+        title:        { type: string }
+        domain:       { type: string, enum: [IT, OT, IT/OT] }
+        likelihood:   { type: integer, minimum: 1, maximum: 5 }
+        impact:       { type: integer, minimum: 1, maximum: 5 }
+        rLikelihood:  { type: integer, minimum: 1, maximum: 5 }
+        rImpact:      { type: integer, minimum: 1, maximum: 5 }
+        status:       { type: string, enum: [open, mitigating, accepted, closed] }
+        treatment:    { type: string }
+        asset:        { type: string }
+    Control:
+      type: object
+      properties:
+        id:     { type: string, example: C-05 }
+        name:   { type: string }
+        fam:    { type: string, enum: [Govern, Identify, Protect, Detect, Respond, Recover] }
+        iso:    { type: string, example: A.8.22 }
+        iec:    { type: string, example: SR 5.1 }
+        nist:   { type: string, example: PR.IR-01 }
+        owner:  { type: string }
+        status: { type: string, enum: [implemented, partial, gap] }
+    Incident:
+      type: object
+      properties:
+        tenant:  { type: string }
+        id:      { type: string }
+        title:   { type: string }
+        sev:     { type: string, enum: [crit, high, med, low] }
+        status:  { type: string, enum: [investigating, contained, monitoring, closed] }
+        fn:      { type: string, enum: [Detection, Response, Recover] }
+        time:    { type: string }
+        detail:  { type: string }
+    Vuln:
+      type: object
+      properties:
+        tenant: { type: string }
+        cve:    { type: string, example: CVE-2024-XXXX1 }
+        title:  { type: string }
+        asset:  { type: string }
+        cvss:   { type: number, minimum: 0, maximum: 10 }
+        sev:    { type: string, enum: [crit, high, med, low] }
+        status: { type: string, enum: [open, mitigating] }
+        note:   { type: string }
+    BootstrapResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        data:
+          type: object
+          properties:
+            tenants:   { type: array, items: { \\$ref: "#/components/schemas/Tenant" } }
+            tenant:    { \\$ref: "#/components/schemas/Tenant" }
+            assets:    { type: array, items: { \\$ref: "#/components/schemas/Asset" } }
+            risks:     { type: array, items: { \\$ref: "#/components/schemas/Risk" } }
+            controls:  { type: array, items: { \\$ref: "#/components/schemas/Control" } }
+            incidents: { type: array, items: { \\$ref: "#/components/schemas/Incident" } }
+            vulns:     { type: array, items: { \\$ref: "#/components/schemas/Vuln" } }
+            evidence:  { type: array, items: { type: object } }
+    Error:
+      type: object
+      properties:
+        ok:    { type: boolean, example: false }
+        error: { type: string }
+
+paths:
+  /ping:
+    get:
+      summary: Health check and version
+      operationId: ping
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:      { type: boolean }
+                  service: { type: string, example: SENTRA }
+                  version: { type: string, example: "6.0" }
+                  backend: { type: string, example: postgres }
+
+  /bootstrap:
+    get:
+      summary: Load all tenant data in one round-trip
+      operationId: bootstrap
+      parameters:
+        - name: tenant
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Complete tenant dataset
+          content:
+            application/json:
+              schema: { \\$ref: "#/components/schemas/BootstrapResponse" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { \\$ref: "#/components/schemas/Error" }
+
+  /{entity}:
+    get:
+      summary: List records for a tenant-scoped entity
+      operationId: listEntity
+      parameters:
+        - name: entity
+          in: path
+          required: true
+          schema: { type: string, enum: [assets, risks, incidents, vulns, evidence, controls, tenants] }
+        - name: tenant
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Array of records
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data: { type: array, items: { type: object } }
+    post:
+      summary: Create a record (analyst/admin only)
+      operationId: createRecord
+      parameters:
+        - name: entity
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                record: { type: object }
+                tenant: { type: string }
+                actor:  { type: string }
+      responses:
+        "200":
+          description: Created record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data: { type: object }
+        "403":
+          description: Insufficient role
+          content:
+            application/json:
+              schema: { \\$ref: "#/components/schemas/Error" }
+
+  /{entity}/{key}:
+    put:
+      summary: Update a record (analyst/admin only)
+      operationId: updateRecord
+      parameters:
+        - name: entity
+          in: path
+          required: true
+          schema: { type: string }
+        - name: key
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                record: { type: object }
+                tenant: { type: string }
+                actor:  { type: string }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+    delete:
+      summary: Delete a record (analyst/admin only)
+      operationId: deleteRecord
+      parameters:
+        - name: entity
+          in: path
+          required: true
+          schema: { type: string }
+        - name: key
+          in: path
+          required: true
+          schema: { type: string }
+        - name: tenant
+          in: query
+          schema: { type: string }
+        - name: actor
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+
+  /cyra:
+    post:
+      summary: AI security copilot proxy (Anthropic Claude)
+      operationId: cyra
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [messages]
+              properties:
+                system:   { type: string }
+                messages: { type: array, items: { type: object } }
+                tenant:   { type: string }
+                model:    { type: string, default: claude-sonnet-4-6 }
+      responses:
+        "200":
+          description: AI response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean }
+                  text: { type: string }
+
+  /cveSync:
+    post:
+      summary: Pull live CVEs from NVD for a keyword
+      operationId: cveSync
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [keyword, tenant]
+              properties:
+                keyword: { type: string }
+                tenant:  { type: string }
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:    { type: boolean }
+                  added: { type: integer }
+
+  /notify:
+    post:
+      summary: Send email and/or SMS alert
+      operationId: notify
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:    { type: string }
+                sms:      { type: string }
+                subject:  { type: string }
+                message:  { type: string }
+                priority: { type: string, enum: [P1, P2, P3, P4] }
+                tenant:   { type: string }
+      responses:
+        "200":
+          description: Send result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:     { type: boolean }
+                  sent:   { type: array, items: { type: string } }
+                  errors: { type: array, items: { type: string } }
+`;
+}
+function downloadOpenAPI(){
+  const yaml=buildOpenAPI();
+  try{const b=new Blob([yaml],{type:'text/yaml'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='sentra-openapi.yaml';a.click();}
+  catch(e){alert('Download blocked in sandbox — works on the deployed site.');}
+}
+function showOpenAPI(){
+  const modal=$('#oapiModal'); if(!modal){
+    const d=document.createElement('div'); d.id='oapiModal';
+    d.innerHTML=`<div style="position:fixed;inset:0;background:rgba(8,12,16,.7);backdrop-filter:blur(2px);z-index:130" onclick="document.getElementById('oapiModal').style.display='none'"></div>
+      <div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:700px;max-width:96vw;max-height:88vh;background:var(--bg2);border:1px solid var(--line);border-radius:12px;z-index:131;display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px">
+          <div style="flex:1"><div class="eyebrow">SENTRA Enterprise API</div><h2 style="font-family:var(--disp);font-size:16px;margin:2px 0 0">OpenAPI 3.0 Specification</h2></div>
+          <button class="btn btn-pri" onclick="downloadOpenAPI()" style="font-size:12px">⬇ Download YAML</button>
+          <button class="btn" onclick="document.getElementById('oapiModal').style.display='none'" style="font-size:12px">✕</button></div>
+        <pre id="oapiPre" style="flex:1;overflow:auto;padding:16px;font-family:var(--mono);font-size:12px;color:var(--text);line-height:1.55;margin:0;background:var(--bg)"></pre></div>`;
+    document.body.appendChild(d);
+  }
+  document.getElementById('oapiModal').style.display='block';
+  document.getElementById('oapiPre').textContent=buildOpenAPI();
+}
+
+
+const ATTACK_TACTICS=['Initial Access','Execution','Persistence','Evasion','Discovery','Lateral Movement','Collection','Command & Control','Inhibit Response','Impair Process','Impact'];
+const ATTACK_TECH=[
+ {id:'T0886',n:'Remote Services',tac:'Initial Access',keys:['remote','vpn','vendor'],ctrl:'C-08'},
+ {id:'T0847',n:'Replication via Removable Media',tac:'Initial Access',keys:['usb','media','autorun'],ctrl:'C-09'},
+ {id:'T0865',n:'Spearphishing Attachment',tac:'Initial Access',keys:['phish','email','harvest'],ctrl:'C-20'},
+ {id:'T0866',n:'Exploitation of Remote Services',tac:'Initial Access',keys:['rce','ssl-vpn','exploit'],ctrl:'C-10'},
+ {id:'T0871',n:'Execution through API',tac:'Execution',keys:['write','modbus','command'],ctrl:'C-13'},
+ {id:'T0873',n:'Project File Infection',tac:'Persistence',keys:['project','logic','tia'],ctrl:'C-22'},
+ {id:'T0858',n:'Change Operating Mode',tac:'Evasion',keys:['mode','program'],ctrl:'C-07'},
+ {id:'T0846',n:'Remote System Discovery',tac:'Discovery',keys:['scan','discovery','enumerat'],ctrl:'C-13'},
+ {id:'T0859',n:'Valid Accounts',tac:'Lateral Movement',keys:['credential','password','brute','login','sign-in'],ctrl:'C-06'},
+ {id:'T0802',n:'Automated Collection',tac:'Collection',keys:['historian','archive','collect'],ctrl:'C-21'},
+ {id:'T0885',n:'Commonly Used Port',tac:'Command & Control',keys:['c2','beacon','callback'],ctrl:'C-05'},
+ {id:'T0803',n:'Block Command Message',tac:'Inhibit Response',keys:['block','dos','flood'],ctrl:'C-23'},
+ {id:'T0836',n:'Modify Parameter',tac:'Impair Process',keys:['setpoint','parameter','writes'],ctrl:'C-14'},
+ {id:'T0831',n:'Manipulation of Control',tac:'Impair Process',keys:['plc','control','logic'],ctrl:'C-11'},
+ {id:'T0826',n:'Loss of Availability',tac:'Impact',keys:['ransom','encrypt','outage'],ctrl:'C-18'},
+ {id:'T0882',n:'Theft of Operational Information',tac:'Impact',keys:['exfil','theft','data'],ctrl:'C-12'},
+];
+function mapAttack(){
+  const d=S.data, hits={};
+  const hay=x=>(x||'').toLowerCase();
+  d.incidents.forEach(inc=>{
+    const h=hay(inc.title+' '+inc.detail);
+    ATTACK_TECH.forEach(t=>{ if(t.keys.some(k=>h.includes(k))) (hits[t.id]=hits[t.id]||[]).push({type:'incident',ref:inc}); });
+  });
+  d.vulns.forEach(v=>{
+    const h=hay(v.title+' '+v.note);
+    ATTACK_TECH.forEach(t=>{ if(t.keys.some(k=>h.includes(k))) (hits[t.id]=hits[t.id]||[]).push({type:'vuln',ref:v}); });
+  });
+  return hits;
+}
+/* ---- Attack-path analysis: breach probability per Purdue conduit ----
+ * Each conduit L(n)→L(n-1) is defended by specific controls. A control at
+ * 'implemented' contributes full resistance, 'partial' half, 'gap' none.
+ * Hop breach probability = base exposure × (1 − resistance). End-to-end
+ * likelihood is the product of hop probabilities along the path.        */
+const CONDUIT_DEFENSE=[
+  {from:'L5',to:'L4', nmF:'Enterprise', base:.9, ctrls:['C-06','C-20','C-22']},
+  {from:'L4',to:'L3.5', nmF:'Site Business', base:.8, ctrls:['C-05','C-13','C-21']},
+  {from:'L3.5',to:'L3', nmF:'IDMZ', base:.7, ctrls:['C-05','C-08','C-12']},
+  {from:'L3',to:'L2', nmF:'Operations', base:.65, ctrls:['C-06','C-07','C-13']},
+  {from:'L2',to:'L1', nmF:'Supervisory', base:.6, ctrls:['C-09','C-11','C-14']},
+  {from:'L1',to:'L0', nmF:'Control', base:.5, ctrls:['C-23','C-24']},
+];
+function attackPath(){
+  const d=S.data;
+  const stat=id=>{ const c=d.controls.find(x=>x.id===id); return c?c.status:'gap'; };
+  const w={implemented:1, partial:.5, gap:0};
+  let total=1, weakest=null, hops=[{lvl:'L5',nm:'Enterprise',p:1}];
+  CONDUIT_DEFENSE.forEach(cd=>{
+    const resist=cd.ctrls.reduce((s,id)=>s+(w[stat(id)]||0),0)/cd.ctrls.length;
+    const p=Math.max(.04, cd.base*(1-resist*.9));           // residual chance even when defended
+    const gaps=cd.ctrls.filter(id=>stat(id)!=='implemented');
+    total*=p;
+    const toNm={'L4':'Site Business','L3.5':'IDMZ','L3':'Operations','L2':'Supervisory','L1':'Control','L0':'Process'}[cd.to];
+    hops.push({lvl:cd.to,nm:toNm,p});
+    if(!weakest||p>weakest.p) weakest={from:cd.from,to:cd.to,p,gaps,cd};
+  });
+  // improvement estimate: implement the weakest conduit's first gap
+  let improved=total;
+  if(weakest&&weakest.gaps.length){
+    const cd=weakest.cd;
+    const resist2=cd.ctrls.reduce((s,id)=>s+((id===weakest.gaps[0])?1:(w[stat(id)]||0)),0)/cd.ctrls.length;
+    const p2=Math.max(.04, cd.base*(1-resist2*.9));
+    improved=total/weakest.p*p2;
+  }
+  return {hops,total,weakest,improved};
+}
+
+RENDER.attack=function(){
+  const hits=mapAttack(), d=S.data;
+  const cover=t=>{ const c=d.controls.find(x=>x.id===t.ctrl); return c?c.status:'gap'; };
+  const seen=Object.keys(hits).length;
+  const ap=attackPath();
+  $('#v-attack').innerHTML=`
+    <div class="callout"><b>MITRE ATT&CK\u00ae for ICS technique coverage.</b> Incidents and CVEs are auto-mapped to adversary techniques across the ICS kill chain; each technique shows the defensive control that mitigates it and its implementation status. Observed activity is highlighted.</div>
+
+    <div class="card" style="margin-bottom:18px"><div class="card-h"><span class="eyebrow">Attack-path analysis</span><h3>Weakest adversary path — Enterprise (L5) → Process (L0)</h3><span class="right">computed from live control status</span></div>
+      <div class="card-b">
+        <div style="display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:6px 0">${ap.hops.map((h,i)=>`
+          <div style="display:flex;align-items:center;flex:1;min-width:120px">
+            <div style="flex:1;text-align:center">
+              <div style="width:44px;height:44px;margin:0 auto;border-radius:10px;border:2px solid ${i===0?'var(--crit)':h.p>.6?'var(--crit)':h.p>.35?'var(--high)':'var(--ok)'};display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:700;font-size:12px;background:var(--bg3)">${h.lvl}</div>
+              <div style="font-size:10.5px;margin-top:5px;color:var(--dim)">${h.nm}</div>
+              <div class="mono" style="font-size:10px;color:${h.p>.6?'var(--crit)':h.p>.35?'var(--high)':'var(--ok)'}">${i===0?'entry':Math.round(h.p*100)+'% breach'}</div>
+            </div>
+            ${i<ap.hops.length-1?`<div style="width:52px;flex:none;text-align:center">
+              <div style="height:2px;background:${ap.hops[i+1].p>.6?'var(--crit)':ap.hops[i+1].p>.35?'var(--high)':'var(--ok)'};position:relative;top:-16px">
+                <span style="position:absolute;right:-4px;top:-5px;color:${ap.hops[i+1].p>.6?'var(--crit)':ap.hops[i+1].p>.35?'var(--high)':'var(--ok)'}">▸</span></div></div>`:''}
+          </div>`).join('')}
+        </div>
+        <div style="display:flex;gap:20px;align-items:center;margin-top:12px;flex-wrap:wrap">
+          <div><span class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:1px">End-to-end compromise likelihood</span>
+            <div style="font-family:var(--mono);font-size:26px;font-weight:600;color:${ap.total>.4?'var(--crit)':ap.total>.15?'var(--high)':'var(--ok)'}">${Math.round(ap.total*100)}%</div></div>
+          <div style="flex:1;min-width:240px"><span class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:1px">Weakest conduit</span>
+            <div style="font-size:13px"><b>${ap.weakest.from} → ${ap.weakest.to}</b> — undefended by: ${ap.weakest.gaps.map(g=>`<span class="mono" style="color:var(--crit)">${g}</span>`).join(', ')||'—'}</div>
+            <div class="muted" style="font-size:11.5px;margin-top:2px">Closing ${ap.weakest.gaps[0]||'the top gap'} cuts end-to-end likelihood to ~${Math.round(ap.improved*100)}%</div></div>
+          <button class="btn btn-pri" onclick='askCyraAbout("Our weakest adversary path runs ${ap.weakest.from} to ${ap.weakest.to}, undefended by controls ${ap.weakest.gaps.join(", ")||"(none listed)"}. Draft a hardening plan for this conduit per IEC 62443-3-2 zones and conduits, with target SL.")'>Ask Cyra to harden this path</button>
+        </div>
+      </div></div>
+
+    <div class="three" style="margin-bottom:16px">
+      ${statCard('Techniques modelled',ATTACK_TECH.length,'var(--brand)',ATTACK_TECH.length)}
+      ${statCard('Observed in tenant',seen,'var(--crit)',ATTACK_TECH.length)}
+      ${statCard('Tactics covered',ATTACK_TACTICS.length,'var(--ok)',ATTACK_TACTICS.length)}
+    </div>
+    ${ATTACK_TACTICS.map(tac=>{
+      const ts=ATTACK_TECH.filter(t=>t.tac===tac); if(!ts.length)return '';
+      return `<div style="margin-bottom:14px">
+        <div class="eyebrow" style="margin-bottom:7px">${tac}</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:9px">
+        ${ts.map(t=>{ const h=hits[t.id]; const st=cover(t);
+          return `<div class="card" style="border-left:3px solid ${h?'var(--crit)':statusColor(st)};cursor:pointer" onclick='askCyraAbout("Explain MITRE ATT&CK for ICS technique ${t.id} (${t.n}) for our environment and how control ${t.ctrl} mitigates it. Current control status: ${st}.")'>
+            <div class="card-b" style="padding:11px 13px">
+              <div style="display:flex;gap:8px;align-items:center">
+                <span class="mono" style="color:var(--brand);font-size:11px">${t.id}</span>
+                ${h?`<span class="tag sev-crit" style="margin-left:auto"><span class="pip"></span>observed \u00d7${h.length}</span>`:`<span class="tag" style="margin-left:auto;background:${statusColor(st)}22;color:${statusColor(st)}"><span class="pip" style="background:${statusColor(st)}"></span>${st}</span>`}
+              </div>
+              <div style="font-weight:600;font-size:12.5px;margin:5px 0 3px">${t.n}</div>
+              <div class="muted" style="font-size:10.5px;font-family:var(--mono)">mitigated by ${t.ctrl}</div>
+            </div></div>`;}).join('')}
+        </div></div>`;}).join('')}`;
+};
+
+/* ---- Global command palette (Ctrl/Cmd+K) ---- */
+function paletteIndex(){
+  const d=S.data, ix=[];
+  NAVDEF.filter(n=>n.id).forEach(n=>ix.push({k:'Module',t:n.label,s:'Navigate',go:()=>go(n.id)}));
+  d.assets.forEach(a=>ix.push({k:'Asset',t:a.name,s:`${a.id} · ${a.level} · ${a.zone}`,go:()=>{go('assets');openAsset(a.id);}}));
+  d.risks.forEach(r=>ix.push({k:'Risk',t:r.title,s:r.id,go:()=>{go('risk');openRisk(r.id);}}));
+  d.controls.forEach(c=>ix.push({k:'Control',t:c.name,s:`${c.id} · ISO ${c.iso} · ${c.nist}`,go:()=>{go('compliance');openControl(c.id);}}));
+  d.incidents.forEach(i=>ix.push({k:'Incident',t:i.title,s:i.id,go:()=>{go('incidents');openIncident(i.id);}}));
+  d.vulns.forEach(v=>ix.push({k:'CVE',t:v.title,s:v.cve,go:()=>{go('vulns');openVuln(v.cve);}}));
+  return ix;
+}
+function openPalette(){
+  let el=$('#palette');
+  if(!el){
+    el=document.createElement('div'); el.id='palette';
+    el.innerHTML=`<div id="palScrim" style="position:fixed;inset:0;background:rgba(8,12,16,.62);backdrop-filter:blur(2px);z-index:120"></div>
+      <div style="position:fixed;top:14vh;left:50%;transform:translateX(-50%);width:560px;max-width:92vw;background:var(--bg2);border:1px solid var(--brand-dim);border-radius:12px;z-index:121;box-shadow:0 24px 70px -20px rgba(0,0,0,.8);overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)">
+          <span style="color:var(--brand)">\u2318K</span>
+          <input id="palInput" placeholder="Search assets, risks, controls, incidents, CVEs, modules\u2026" style="flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:14px;font-family:var(--ui)">
+          <span class="tag tag-n" style="font-size:9px">ESC</span></div>
+        <div id="palResults" style="max-height:46vh;overflow-y:auto;padding:6px"></div></div>`;
+    document.body.appendChild(el);
+    $('#palScrim').onclick=closePalette;
+    $('#palInput').addEventListener('input',renderPalette);
+    $('#palInput').addEventListener('keydown',e=>{
+      const items=$$('#palResults .pal-item'); const cur=items.findIndex(x=>x.classList.contains('sel'));
+      if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault();
+        const nx=e.key==='ArrowDown'?Math.min(cur+1,items.length-1):Math.max(cur-1,0);
+        items.forEach((x,i)=>x.classList.toggle('sel',i===nx)); items[nx]&&items[nx].scrollIntoView({block:'nearest'}); }
+      if(e.key==='Enter'){ const sel=items[cur>=0?cur:0]; sel&&sel.click(); }
+      if(e.key==='Escape') closePalette();
+    });
+  }
+  el.style.display='block'; $('#palInput').value=''; renderPalette(); $('#palInput').focus();
+}
+function closePalette(){ const el=$('#palette'); if(el)el.style.display='none'; }
+function renderPalette(){
+  const q=($('#palInput').value||'').toLowerCase().trim();
+  const ix=paletteIndex();
+  const res=(q?ix.filter(x=>(x.t+' '+x.s+' '+x.k).toLowerCase().includes(q)):ix.filter(x=>x.k==='Module')).slice(0,14);
+  const kc={Module:'var(--brand)',Asset:'var(--ok)',Risk:'var(--high)',Control:'var(--low)',Incident:'var(--crit)',CVE:'var(--med)'};
+  $('#palResults').innerHTML=res.length?res.map((r,i)=>`
+    <div class="pal-item ${i===0?'sel':''}" style="display:flex;gap:11px;align-items:center;padding:10px 12px;border-radius:8px;cursor:pointer" 
+      onmouseenter="this.parentNode.querySelectorAll('.pal-item').forEach(x=>x.classList.remove('sel'));this.classList.add('sel')" 
+      data-i="${i}">
+      <span class="tag" style="background:${kc[r.k]}22;color:${kc[r.k]};min-width:64px;justify-content:center"><span class="pip" style="background:${kc[r.k]}"></span>${r.k}</span>
+      <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.t)}</div>
+        <div class="muted" style="font-size:11px;font-family:var(--mono)">${esc(r.s)}</div></div></div>`).join('')
+    :'<div class="empty" style="padding:22px">No matches.</div>';
+  // bind clicks with closures (avoid inline index serialization issues)
+  $$('#palResults .pal-item').forEach((elx,i)=>{ elx.onclick=()=>{ closePalette(); res[i].go(); }; });
+}
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openPalette(); }
+});
+const palStyle=document.createElement('style');
+palStyle.textContent=`#palResults .pal-item.sel{background:var(--bg3);outline:1px solid var(--brand-dim)}`;
+document.head.appendChild(palStyle);
+
+/* ---- Executive Briefing generator (print-ready) ---- */
+function execBriefing(){
+  const d=S.data, m=metrics();
+  const topRisks=[...d.risks].sort((a,b)=>b.likelihood*b.impact-a.likelihood*a.impact).slice(0,5);
+  const openInc=d.incidents.filter(i=>i.status!=='closed');
+  const gaps=gapPlan().slice(0,5);
+  const hits=mapAttack();
+  const today=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>SENTRA Executive Briefing — ${esc(d.tenant.name)}</title><style>
+    body{font-family:Arial,Helvetica,sans-serif;color:#1B2933;margin:40px auto;max-width:820px;line-height:1.55;font-size:13px}
+    h1{font-size:26px;margin:0;color:#14323A} h2{font-size:15px;color:#127C8A;border-bottom:2px solid #127C8A;padding-bottom:4px;margin:26px 0 10px}
+    .brand{color:#127C8A;font-weight:800;font-size:20px;letter-spacing:1px} .sub{color:#5A6776;font-size:11px}
+    table{width:100%;border-collapse:collapse;margin:8px 0} th{background:#127C8A;color:#fff;text-align:left;padding:6px 9px;font-size:11px}
+    td{border:1px solid #d7dee2;padding:6px 9px;font-size:12px} .kpis{display:flex;gap:14px;margin:14px 0}
+    .kpi{flex:1;border:1px solid #d7dee2;border-radius:8px;padding:12px;text-align:center} .kpi b{display:block;font-size:24px}
+    .crit{color:#B23B3B}.ok{color:#2E8B57}.med{color:#B8860B}
+    .foot{margin-top:34px;border-top:1px solid #d7dee2;padding-top:8px;color:#7E8A98;font-size:10px;display:flex;justify-content:space-between}
+    @media print{body{margin:12mm}}</style></head><body>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><div class="brand">SENTRA <span style="font-weight:400;color:#5A6776;font-size:12px">by NEXARCH</span></div>
+      <h1>Executive Security Briefing</h1><div class="sub">${esc(d.tenant.name)} · ${esc(d.tenant.sector)} · ${today} · CONFIDENTIAL</div></div>
+      <div style="text-align:right"><div style="font-size:34px;font-weight:800;color:${m.posture>=75?'#2E8B57':m.posture>=50?'#B8860B':'#B23B3B'}">${m.posture}</div><div class="sub">Posture / 100</div></div></div>
+    <div class="kpis">
+      <div class="kpi"><b>${m.isoCov}%</b><span class="sub">ISO 27001</span></div>
+      <div class="kpi"><b>${m.iecCov}%</b><span class="sub">IEC 62443</span></div>
+      <div class="kpi"><b class="${openInc.length?'crit':'ok'}">${openInc.length}</b><span class="sub">Open incidents</span></div>
+      <div class="kpi"><b class="${m.critVuln?'crit':'ok'}">${m.critVuln}</b><span class="sub">Critical CVEs</span></div>
+      <div class="kpi"><b class="${m.gap?'crit':'ok'}">${m.gap}</b><span class="sub">Control gaps</span></div></div>
+    <h2>Summary</h2>
+    <p>The composite security posture for ${esc(d.tenant.name)} stands at <b>${m.posture}/100</b> across the NIST CSF 2.0 functions
+    (Govern ${m.csf.Govern}%, Identify ${m.csf.Identify}%, Protect ${m.csf.Protect}%, Detect ${m.csf.Detect}%, Respond ${m.csf.Respond}%, Recover ${m.csf.Recover}%).
+    ${Object.keys(hits).length?`Adversary activity mapping shows <b>${Object.keys(hits).length} MITRE ATT&CK for ICS technique(s) observed</b> in current incidents and exposures.`:'No adversary techniques are currently observed against the ATT&CK for ICS model.'}
+    ${m.gap?`The remediation plan prioritises ${m.gap} open control gap(s); closing the top three is projected to deliver the largest posture uplift.`:''}</p>
+    <h2>Top Risks</h2>
+    <table><tr><th>ID</th><th>Risk</th><th>Inherent</th><th>Residual</th><th>Status</th></tr>
+    ${topRisks.map(r=>`<tr><td>${r.id}</td><td>${esc(r.title)}</td><td class="crit"><b>${r.likelihood*r.impact}</b></td><td class="med"><b>${r.rLikelihood*r.rImpact}</b></td><td>${r.status}</td></tr>`).join('')}</table>
+    <h2>Open Incidents</h2>
+    ${openInc.length?`<table><tr><th>ID</th><th>Incident</th><th>Severity</th><th>Status</th></tr>
+    ${openInc.map(i=>`<tr><td>${i.id}</td><td>${esc(i.title)}</td><td class="${i.sev==='crit'?'crit':'med'}"><b>${i.sev}</b></td><td>${i.status}</td></tr>`).join('')}</table>`:'<p class="ok">No open incidents.</p>'}
+    <h2>Priority Remediation Actions</h2>
+    <table><tr><th>#</th><th>Close this control</th><th>Frameworks</th><th>Reduces</th></tr>
+    ${gaps.map((p,i)=>`<tr><td>${i+1}</td><td>${esc(p.c.name)} <span class="sub">(${p.c.id}, ${p.c.status})</span></td><td class="sub">ISO ${p.c.iso} · IEC ${p.c.iec} · ${p.c.nist}</td><td>${p.linked.map(r=>r.id).join(', ')||'posture'}</td></tr>`).join('')}</table>
+    <div class="foot"><span>Generated live by SENTRA by NEXARCH · ISO/IEC 27001:2022 · IEC 62443 · NIST CSF 2.0</span><span>Print or Save as PDF</span></div>
+    <script>window.onload=()=>setTimeout(()=>window.print(),400)<\/script></body></html>`;
+  const w=window.open('','_blank');
+  if(!w){ alert('Pop-up blocked — allow pop-ups to generate the briefing.'); return; }
+  w.document.write(html); w.document.close();
+}
+
+/* ============================================================================
    DETAIL DRAWERS
    ============================================================================ */
 function openDrawer(ey,title,html){$('#drEy').textContent=ey;$('#drTitle').textContent=title;$('#drBody').innerHTML=html;$('#scrim').classList.add('open');$('#drawer').classList.add('open');}
@@ -1679,6 +3030,7 @@ async function boot(first=true){
   else{cyraHistory=[];$('#cyraBody').innerHTML='';}
   RENDER[S.view]();
   const m=metrics();updatePostureRing(m.posture);
+  snapshotPosture();
 }
 window.go=go;window.openCyra=openCyra;window.closeCyra=closeCyra;window.sendCyra=sendCyra;
 window.toggleTenantMenu=toggleTenantMenu;window.switchTenant=switchTenant;window.filterAssets=filterAssets;
@@ -1698,6 +3050,8 @@ window.syncNVD=syncNVD;
 window.openPlaybookRun=openPlaybookRun;window.toggleStep=toggleStep;window.escalate=escalate;
 window.toggleChan=toggleChan;window.testAlert=testAlert;window.saveNotify=saveNotify;window.NOTIFY=NOTIFY;
 window.genEvidence=genEvidence;window.exportEvidence=exportEvidence;
+window.openPalette=openPalette;window.closePalette=closePalette;window.execBriefing=execBriefing;window.paletteIndex=paletteIndex;
+window.clearTrend=clearTrend;window.downloadOpenAPI=downloadOpenAPI;window.showOpenAPI=showOpenAPI;window.runRogueScan=runRogueScan;
 /* responsive nav toggle */
 if(window.innerWidth<=820)$('#navToggle').style.display='block';
 boot();
